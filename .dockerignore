@@ -1,0 +1,8 @@
+# The image holds only the sources and tools: no game files, and no Microsoft files.
+# toolchain/msc51 is mounted when the container runs (see README.md).
+.git
+build
+resources
+toolchain
+**/__pycache__
+**/.DS_Store

@@ -1,0 +1,14 @@
+10df:321c	text_window	1231
+10df:36eb	draw_text_window	945
+10df:3d91	clear_play_area	41
+10df:403a	anim_start	1
+10df:403b	anim_step	1
+10df:403c	anim_stop	1
+10df:403e	mouse_reset	22
+10df:4054	mouse_show	22
+10df:406a	mouse_hide	22
+10df:4080	mouse_get_status	40
+10df:4228	save_screen	30
+10df:4246	restore_screen	28
+10df:428c	set_graphics_mode	26
+10df:42a6	set_text_mode	26

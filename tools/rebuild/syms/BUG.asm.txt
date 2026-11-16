@@ -1,0 +1,19 @@
+# DGROUP _BSS the assembly sources use (GFX.ASM's picture decoder): DATA.ASM
+# gives them PUBLIC labels. The LZW string table (lzw_codes/lzw_chars, 3 bytes
+# per code), its variables, then the decoder's own stack up to lzw_stack_top.
+lzw_codes 3AFC
+lzw_chars 3AFE
+lzw_saved_sp 5302
+lzw_count 5304
+lzw_run 5306
+lzw_run_byte 5307
+lzw_bits 5308
+lzw_max_bits 5309
+lzw_mask 530A
+lzw_next_code 530C
+lzw_input 530E
+lzw_input_bits 5310
+pic_nibbles 5311
+lzw_prev_code 5312
+lzw_first_char 5314
+lzw_stack_top 5515

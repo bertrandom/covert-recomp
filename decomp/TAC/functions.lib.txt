@@ -1,0 +1,11 @@
+10e8:bfb5	draw_text_window	945
+10e8:c65b	clear_play_area	41
+10e8:d0ae	anim_start	1
+10e8:d0af	anim_step	1
+10e8:d0b0	anim_stop	1
+10e8:d154	save_screen	30
+10e8:d172	restore_screen	28
+10e8:d1b8	set_graphics_mode	26
+10e8:d1d2	set_text_mode	26
+10e8:d5e8	stream_set_file	15
+10e8:d6a2	close_catalog	37

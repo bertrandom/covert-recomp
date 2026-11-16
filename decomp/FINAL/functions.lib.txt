@@ -1,0 +1,12 @@
+1100:7668	save_progress	757	MSGTEXT.C (FINAL: compose_message_text)
+1100:9443	draw_text_window	945	TEXTWIN.C (text_window_body)
+1100:9ae9	clear_play_area	41	UI.C
+1100:bed0	mouse_reset	22	MOUSE.C
+1100:bee6	mouse_show	22	MOUSE.C
+1100:befc	mouse_hide	22	MOUSE.C
+1100:bf12	mouse_get_status	40	MOUSE.C
+1100:c0ba	save_screen	30	GFX.C
+1100:c0d8	restore_screen	28	GFX.C
+1100:c11e	set_graphics_mode	26	GFX.C
+1100:c138	set_text_mode	26	GFX.C
+1100:c152	randomize	23	GFX.C

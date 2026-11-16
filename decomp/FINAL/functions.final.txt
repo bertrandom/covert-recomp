@@ -1,0 +1,6 @@
+1100:0056	main	957
+1100:0538	set_exit_state	1
+1100:0539	draw_status_bar	1
+1100:067c	draw_intercept_popup	1
+1100:2c60	draw_sprite_a	27
+1100:053a	compose_intercept	322

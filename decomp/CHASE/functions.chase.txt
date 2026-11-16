@@ -1,0 +1,4 @@
+10df:001c	main	1074
+10df:04a2	draw_status_bar	1
+10df:04a3	draw_face_parts	1
+10df:04a1	stub0	1

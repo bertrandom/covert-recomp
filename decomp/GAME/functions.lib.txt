@@ -1,0 +1,8 @@
+10f7:cb7d	draw_text_window	945
+10f7:d223	clear_play_area	41
+10f7:d43c	save_screen	30
+10f7:d45a	restore_screen	28
+10f7:d4a0	set_graphics_mode	26
+10f7:d4ba	set_text_mode	26
+10f7:a833	write_save_file	188
+10f7:d7be	load_picture_to_buffer	91

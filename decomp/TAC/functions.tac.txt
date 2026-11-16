@@ -1,0 +1,6 @@
+10e8:0018	main	1573
+10e8:070d	draw_status_bar	1
+10e8:0662	play_sound	31
+10e8:34c0	show_menu	34
+10e8:4392	draw_intercept_popup	271
+10e8:5aed	draw_sprite_a	32

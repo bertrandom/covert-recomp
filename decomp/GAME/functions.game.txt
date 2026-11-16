@@ -1,0 +1,7 @@
+10f7:005a	main	458
+1000:01dc	gfx_show_page	3
+1000:014b	drv_slot9	5
+10f7:034e	set_exit_state	120
+10f7:03ea	draw_intercept_popup	1
+10f7:3cdd	draw_sprite_a	27
+1000:01e3	drv_draw_image	3

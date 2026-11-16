@@ -1,0 +1,11 @@
+# Microsoft C 5.1 / MASM 5.10: provided by the user, not distributed (see README.md)
+/toolchain/msc51/
+
+# Build output
+/build/
+__pycache__/
+
+# Original game files, if you put them here for the comparison
+/resources/
+
+.DS_Store

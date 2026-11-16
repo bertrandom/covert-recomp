@@ -1,0 +1,2 @@
+1100:aeeb	anim_set_palette	25
+1100:af04	anim_unused_hook	1

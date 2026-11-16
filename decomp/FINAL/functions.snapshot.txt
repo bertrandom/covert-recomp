@@ -1,0 +1,4 @@
+1100:3bcc	vacation_snapshot	896
+1000:01d7	drv_slot9	5
+1000:0268	drv_gate_slot30	3
+1000:026f	drv_draw_image	3
