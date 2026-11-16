@@ -1,142 +1,151 @@
 #!/usr/bin/env python3
 """Install the Microsoft C 5.1 / MASM 5.10 files the build needs into toolchain/msc51.
 
-  setup_toolchain.py [SOURCE ...]
+  setup_toolchain.py [ARCHIVE | DIR ...]
 
-Each SOURCE is a .7z (or .zip) of disk images, such as the WinWorld archives
-"Microsoft C 5.1 Optimizing Compiler (5.25).7z" and "Microsoft Macro Assembler
-5.1 (5.25).7z", a single disk image (.img), or a directory holding images or
-already-extracted files. With no arguments, every .7z/.zip in resources/ is used.
-.7z archives need the `7z` tool.
-
-Files are recognized by their SHA-1, not by disk or file name, so any copy of the
-right version works. Eight files are copied as they are; SLIBCE.LIB, the
-small-model runtime, isn't on the disks: like MSC's SETUP, it is built with LIB
-3.11 from SLIBCR.LIB, SLIBFP.LIB, EM.LIB and LIBH.LIB (in DOSBox-X, see
-tools/dosrun.sh) and checked against the expected SHA-1.
+The ARCHIVEs are the two WinWorld disk archives
+  Microsoft C 5.1 Optimizing Compiler (5.25).7z
+  Microsoft Macro Assembler 5.1 (5.25).7z
+Each archive's SHA-1 is checked against SHA1SUMS before it is opened: an archive
+named on the command line must match; in a DIR (default: resources/) the .7z files
+that match are used and others skipped. The archives
+hold floppy images (FAT12): eight files are copied from them, and SLIBCE.LIB, the
+small-model runtime that MSC's SETUP assembles from component libraries, is built
+the same way with LIB 3.11 in DOSBox-X (tools/dosrun.sh). Every installed file is
+checked against SHA1SUMS. Needs the `7z` tool.
 """
 import glob
 import hashlib
-import io
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
-import zipfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from extract_game import fat_files, looks_like_fat, tool  # noqa: E402
-
 DEST = os.path.join(ROOT, "toolchain", "msc51")
-
-# installed file -> (SHA-1, where it comes from)
-WANTED = {
-    "BIN/CL.EXE": ("d44e33af2aa12ce992af4f41422fe1ed36f3de70", "MSC 5.1 Setup disk"),
-    "BIN/C1.EXE": ("28ffc307b1e3902a1aaef6d433357cbf1acd91bb", "MSC 5.1 Setup disk"),
-    "BIN/C2.EXE": ("04f38da6ba2c0a3d0e5278a2add86240c7ae52b2", "MSC 5.1 Compiler 2 disk"),
-    "BIN/C3.EXE": ("4e48d6acce40aac6835d7a79e5d082404bd31f76", "MSC 5.1 Compiler 1 disk"),
-    "BIN/LINK.EXE": ("eba98c968fc3cb6727a55172703c6cfc68b3e875", "MSC 5.1 Utilities 1 disk"),
-    "BIN/EXEMOD.EXE": ("45bd3685de80124b920befa47e558c0ddfb40b20", "MSC 5.1 Utilities 1 disk"),
-    "INCLUDE/STDIO.H": ("2f1d6948de20cbe30cfac1ba532e3f86d9add924", "MSC 5.1 Include Files disk"),
-    "BIN/MASM.EXE": ("6fa0c4f39d45a07a1834597c10545184826140be", "MASM 5.10 disk 1"),
-}
-# what SLIBCE.LIB is built from (only needed during setup)
-PARTS = {
-    "LIB.EXE": ("dfea75b4762ba9d009fbf7bfeb9d175c6633d84b", "MSC 5.1 Utilities 1 disk"),
-    "SLIBCR.LIB": ("8c945a4d15e982d6684dc70fd200f424539c6bb8", "MSC 5.1 Libraries (Small and Medium Models) disk"),
-    "SLIBFP.LIB": ("ef4a3308bc35dc2c2c4ecb86e3539c3cabb8f6a0", "MSC 5.1 Floating-Point Libraries disk"),
-    "EM.LIB": ("883e9c43d32803d6f05b9eabc28fa42d2f3ac752", "MSC 5.1 Floating-Point Libraries disk"),
-    "LIBH.LIB": ("e892ad5d5cbbe99f25af75bfaa7765e9addf21c1", "MSC 5.1 Floating-Point Libraries disk"),
-}
-SLIBCE = ("LIB/SLIBCE.LIB", "29169062f2cfe56668a0ae473c8dfc00e8398084")
 LIB_CMD = "LIB SLIBCE.LIB +SLIBCR.LIB +SLIBFP.LIB +EM.LIB +LIBH.LIB;"
+PARTS = ["LIB.EXE", "SLIBCR.LIB", "SLIBFP.LIB", "EM.LIB", "LIBH.LIB"]   # for SLIBCE.LIB
 
 
 def sha1(b):
     return hashlib.sha1(b).hexdigest()
 
 
-def blobs_from(source):
-    """Every file found in SOURCE: archive members, files inside disk images, plain files."""
-    out = []
-
-    def add(name, data):
-        if looks_like_fat(data):
-            try:
-                out.extend(fat_files(data).values())
-                return
-            except Exception:
-                pass
-        out.append(data)
-
-    if os.path.isdir(source):
-        for dp, _dn, fn in os.walk(source):
-            for f in fn:
-                add(f, open(os.path.join(dp, f), "rb").read())
-        return out
-    data = open(source, "rb").read()
-    if data[:6] == b"7z\xbc\xaf\x27\x1c":
-        with tempfile.TemporaryDirectory() as t:
-            subprocess.run([tool("7zz", "7z", "7za"), "x", "-y", "-o" + t, source],
-                           check=True, stdout=subprocess.DEVNULL)
-            return blobs_from(t)
-    if data[:2] == b"PK":
-        with zipfile.ZipFile(io.BytesIO(data)) as z:
-            for i in z.infolist():
-                if not i.is_dir():
-                    add(i.filename, z.read(i))
-        return out
-    add(source, data)
+def sums():
+    out = {}
+    for line in open(os.path.join(ROOT, "SHA1SUMS")):
+        line = line.strip()
+        if line and not line.startswith("#"):
+            h, name = line.split(None, 1)
+            out[name] = h
     return out
 
 
+def fat_files(img):
+    """The files in a FAT12 floppy image (root and subdirectories)."""
+    bps, spc, res, nfats, nroot = struct.unpack_from("<HBHBH", img, 11)
+    spf = struct.unpack_from("<H", img, 22)[0]
+    fat = img[res * bps:(res + spf) * bps]
+    root = (res + nfats * spf) * bps
+    data = root + ((nroot * 32 + bps - 1) // bps) * bps
+    clus = spc * bps
+
+    def chain(c):
+        out, seen = bytearray(), set()
+        while 2 <= c < 0xFF0 and c not in seen:
+            seen.add(c)
+            out += img[data + (c - 2) * clus:data + (c - 1) * clus]
+            v = struct.unpack_from("<H", fat, c * 3 // 2)[0]
+            c = v >> 4 if c & 1 else v & 0xFFF
+        return bytes(out)
+
+    def walk(raw):
+        out = []
+        for k in range(0, len(raw) - 31, 32):
+            e = raw[k:k + 32]
+            if e[0] == 0:
+                break
+            if e[0] == 0xE5 or e[11] & 0x08 or e[11] == 0x0F or e[0:1] == b".":
+                continue
+            start, size = struct.unpack_from("<HI", e, 26)
+            out += walk(chain(start)) if e[11] & 0x10 else [chain(start)[:size]]
+        return out
+
+    return walk(img[root:root + nroot * 32])
+
+
+def is_floppy(b):
+    return len(b) >= 512 and b[510:512] == b"\x55\xaa" and struct.unpack_from("<H", b, 11)[0] == 512
+
+
 def main():
-    sources = sys.argv[1:] or sorted(glob.glob(os.path.join(ROOT, "resources", "*.7z"))
-                                     + glob.glob(os.path.join(ROOT, "resources", "*.zip")))
+    known = sums()
+    archives_ok = {h: n for n, h in known.items() if n.endswith(".7z")}
+    sources = []
+    for a in sys.argv[1:] or [os.path.join(ROOT, "resources")]:
+        if os.path.isdir(a):
+            for f in sorted(glob.glob(os.path.join(a, "*.7z"))):
+                if sha1(open(f, "rb").read()) in archives_ok:
+                    sources.append(f)
+                else:
+                    print(f"{os.path.basename(f)}: not one of the Microsoft archives, skipped")
+        else:
+            sources.append(a)
     if not sources:
-        sys.exit("usage: setup_toolchain.py SOURCE...  (the MSC 5.1 and MASM 5.10 disk "
-                 "archives; with no arguments, the .7z/.zip files in resources/)")
+        sys.exit("no Microsoft C 5.1 / MASM 5.10 archives found; expected:\n  "
+                 + "\n  ".join(f"{n} (SHA-1 {x})" for x, n in archives_ok.items()))
+    seven = shutil.which("7zz") or shutil.which("7z") or shutil.which("7za")
+    if not seven:
+        sys.exit("needs the 7z tool (7-Zip) on the PATH")
     found = {}
-    for s in sources:
-        n = 0
-        for b in blobs_from(s):
-            found.setdefault(sha1(b), b)
-            n += 1
-        print(f"{s}: {n} files")
-    need = dict(WANTED, **PARTS)
-    missing = [(f, where) for f, (h, where) in need.items() if h not in found]
+    for src in sources:
+        h = sha1(open(src, "rb").read())
+        if h not in archives_ok:
+            sys.exit(f"{src}: unknown archive (SHA-1 {h}); expected one of:\n  "
+                     + "\n  ".join(f"{n} ({x})" for x, n in archives_ok.items()))
+        print(f"{os.path.basename(src)}: SHA-1 ok")
+        with tempfile.TemporaryDirectory() as t:
+            subprocess.run([seven, "x", "-y", "-o" + t, src], check=True, stdout=subprocess.DEVNULL)
+            for dp, _dn, fn in os.walk(t):
+                for f in fn:
+                    b = open(os.path.join(dp, f), "rb").read()
+                    if is_floppy(b):
+                        for member in fat_files(b):
+                            found.setdefault(sha1(member), member)
+    want = {n: h for n, h in known.items() if n.startswith("toolchain/") and not n.endswith("SLIBCE.LIB")}
+    parts = {p: known["setup/" + p] for p in PARTS}
+    missing = [n for n, h in list(want.items()) + list(parts.items()) if h not in found]
     if missing:
-        for f, where in missing:
-            print(f"missing {os.path.basename(f)} (from the {where})", file=sys.stderr)
-        sys.exit("toolchain/msc51 not set up: give the MSC 5.1 and MASM 5.10 disk archives")
-    for f, (h, _) in WANTED.items():
-        path = os.path.join(DEST, f)
+        sys.exit("not found in the archives: " + ", ".join(os.path.basename(n) for n in missing)
+                 + "\n(give both the MSC 5.1 and the MASM 5.10 archive)")
+    for n, h in want.items():
+        path = os.path.join(ROOT, n)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "wb") as o:
             o.write(found[h])
-        print(f"  {f}")
-    # SLIBCE.LIB: combine the libraries with LIB, in DOSBox-X
+        print(f"  {n}")
+    # SLIBCE.LIB: combine the libraries with LIB, as SETUP does
     with tempfile.TemporaryDirectory() as t:
-        for f, (h, _) in PARTS.items():
-            with open(os.path.join(t, f), "wb") as o:
+        for p, h in parts.items():
+            with open(os.path.join(t, p), "wb") as o:
                 o.write(found[h])
-        env = dict(os.environ, TOOLCHAIN_DIR=t)
-        subprocess.run([os.path.join(ROOT, "tools", "dosrun.sh"), "C:", LIB_CMD], env=env,
-                       check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([os.path.join(ROOT, "tools", "dosrun.sh"), "C:", LIB_CMD],
+                       env=dict(os.environ, TOOLCHAIN_DIR=t), check=True, stdout=subprocess.DEVNULL)
         lib = os.path.join(t, "SLIBCE.LIB")
         if not os.path.exists(lib):
             sys.exit("LIB did not produce SLIBCE.LIB (is DOSBox-X installed?)")
         data = open(lib, "rb").read()
-    if sha1(data) != SLIBCE[1]:
+    name = "toolchain/msc51/LIB/SLIBCE.LIB"
+    if sha1(data) != known[name]:
         sys.exit(f"SLIBCE.LIB came out different (SHA-1 {sha1(data)}); not installed")
-    path = os.path.join(DEST, SLIBCE[0])
+    path = os.path.join(ROOT, name)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as o:
         o.write(data)
-    print(f"  {SLIBCE[0]} (built with LIB)")
-    print(f"toolchain/msc51 ready ({len(WANTED) + 1} files)")
+    print(f"  {name} (built with LIB)")
+    print(f"toolchain/msc51 ready ({len(want) + 1} files, all SHA-1 ok)")
 
 
 if __name__ == "__main__":

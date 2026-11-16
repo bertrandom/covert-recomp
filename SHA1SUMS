@@ -1,0 +1,46 @@
+# SHA-1 of the inputs and of the expected build output.
+# Format: <sha1>  <name>   (lines starting with # are comments)
+
+# The Microsoft disk archives tools/setup_toolchain.py reads (WinWorld)
+8fe843150ea5ac2598703c7e6c893b465ae38967  Microsoft C 5.1 Optimizing Compiler (5.25).7z
+2a4a0141a3c938b3cf0adc0018168ccc96305ae9  Microsoft Macro Assembler 5.1 (5.25).7z
+
+# toolchain/msc51 as installed by tools/setup_toolchain.py
+d44e33af2aa12ce992af4f41422fe1ed36f3de70  toolchain/msc51/BIN/CL.EXE
+28ffc307b1e3902a1aaef6d433357cbf1acd91bb  toolchain/msc51/BIN/C1.EXE
+04f38da6ba2c0a3d0e5278a2add86240c7ae52b2  toolchain/msc51/BIN/C2.EXE
+4e48d6acce40aac6835d7a79e5d082404bd31f76  toolchain/msc51/BIN/C3.EXE
+eba98c968fc3cb6727a55172703c6cfc68b3e875  toolchain/msc51/BIN/LINK.EXE
+45bd3685de80124b920befa47e558c0ddfb40b20  toolchain/msc51/BIN/EXEMOD.EXE
+6fa0c4f39d45a07a1834597c10545184826140be  toolchain/msc51/BIN/MASM.EXE
+2f1d6948de20cbe30cfac1ba532e3f86d9add924  toolchain/msc51/INCLUDE/STDIO.H
+29169062f2cfe56668a0ae473c8dfc00e8398084  toolchain/msc51/LIB/SLIBCE.LIB
+
+# What SLIBCE.LIB is built from (found in the archives; only used during setup)
+dfea75b4762ba9d009fbf7bfeb9d175c6633d84b  setup/LIB.EXE
+8c945a4d15e982d6684dc70fd200f424539c6bb8  setup/SLIBCR.LIB
+ef4a3308bc35dc2c2c4ecb86e3539c3cabb8f6a0  setup/SLIBFP.LIB
+883e9c43d32803d6f05b9eabc28fa42d2f3ac752  setup/EM.LIB
+e892ad5d5cbbe99f25af75bfaa7765e9addf21c1  setup/LIBH.LIB
+
+# The executables as shipped (GOG / eXoDOS release); the build is expected to match
+d9dfad8d79883aec97e9a408a6c17e028aec3298  CODE.EXE
+7b08a5978983d9c29b7b81cfa707874373889d49  BUG.EXE
+87a7b6d9a9e716ad08ccc87f4bf2f9a8cdfc4291  CHASE.EXE
+f5b977ec1809fe5e926dfe3cae89d8909c89a840  TAC.EXE
+65fe1e23545c66e427ad3a14ad5f098a9e1ec9e0  FINAL.EXE
+8168312a996c4c594de5157d834eefa6cbb6c379  GAME.EXE
+124ab2fc0f08110a248a17663974e0cb2b35975f  COVERT.EXE
+408e2ca5a0d2d638cc731ca02d5df2b3ea634541  INTRO.EXE
+ade70a3c7303946060003f5e0a4a6d7b9d59e193  MGRAPHIC.EXE
+b339a8374babaa6736e2a73925ce25714ff793e6  CGRAPHIC.EXE
+3feca75f27f2ce74e4728d25451cb551d63be9ab  EGRAPHIC.EXE
+5bc1c79b082f0ade19f52660d6b4f34539ae0ab4  TGRAPHIC.EXE
+1726908a82181e5b597de74bf01888419d167732  MISC.EXE
+29aa130a43d2808fd4d6866e953703807b2c266d  NSOUND.CA
+f104a8c02d798813bb24aa1d2314539fd1589796  ISOUND.CA
+8c0388d6ae7bca42f333fc798bcbfde96ccbf45e  TSOUND.CA
+40f670e720d6b72037bf8416766bbb5137ed3484  ASOUND.CA
+76e74d60ea6153220ef6bc54c86fb2bb1ebe1279  RSOUND.CA
+# FINAL.EXE built with NO_PATCHES=1 (no copy-protection patch): the 1990 floppy release
+ded2d190ffacdd9ca976ba2d6e8f5446dfc9a1dc  FINAL.EXE NO_PATCHES

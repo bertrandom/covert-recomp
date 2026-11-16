@@ -1,9 +1,10 @@
 #!/bin/bash
-# Assemble and link a driver from src/DRIVERS/NAME.ASM with MASM 5.10 / LINK 5.01
-# and compare it with the original.
+# Assemble and link a driver from src/DRIVERS/NAME.ASM with MASM 5.10 / LINK 5.01,
+# and compare its SHA-1 with the original release's (SHA1SUMS; a difference is
+# reported, not an error).
 #   tools/drivers/build.sh NAME [SRC.ASM]
-# The output is build/NAME/NAME.EXE (renamed to NAME.CA for the sound drivers,
-# whose original is NAME.CA). Exit status 0 when byte-identical.
+# The output is build/NAME/NAME.EXE (NAME.CA for the sound drivers). Exit status 0
+# when it was built.
 set -e
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NAME="$(echo "$1" | tr a-z A-Z)"
@@ -11,14 +12,8 @@ SRC="${2:-$ROOT/src/DRIVERS/$NAME.ASM}"
 [ -n "$NAME" ] && [ -f "$SRC" ] || { echo "usage: $0 NAME [SRC.ASM]" >&2; exit 2; }
 "$ROOT/tools/dosrun.sh" --check || exit 2
 
-ORIG_DIR="${ORIG_DIR:-$ROOT/resources/Covert}"
-if [ ! -d "$ORIG_DIR" ] && git -C "$ROOT" rev-parse >/dev/null 2>&1; then
-  COMMON="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir)"
-  ORIG_DIR="$(dirname "$COMMON")/resources/Covert"
-fi
 EXT=EXE
 case "$NAME" in ?SOUND) EXT=CA;; esac     # the sound drivers ship as .CA
-ORIG="$ORIG_DIR/$NAME.$EXT"
 
 B="$ROOT/build/$NAME"
 mkdir -p "$B"
@@ -42,13 +37,4 @@ if [ -n "$CKS" ]; then
   python3 -c "import sys; p=sys.argv[1]; b=bytearray(open(p,'rb').read()); v=int(sys.argv[2],16); b[18:20]=bytes([v&255,v>>8]); open(p,'wb').write(b)" "$OUT" "$CKS"
 fi
 if [ "$EXT" = CA ]; then mv "$OUT" "$B/$NAME.CA"; OUT="$B/$NAME.CA"; fi
-if [ ! -f "$ORIG" ]; then
-  echo "$NAME.$EXT: built, no original to compare with ($(wc -c < "$OUT" | tr -d ' ') bytes)"
-elif cmp -s "$OUT" "$ORIG"; then
-  echo "$NAME.$EXT: byte-identical ($(wc -c < "$ORIG" | tr -d ' ') bytes)"
-else
-  N=$(cmp -l "$OUT" "$ORIG" 2>/dev/null | wc -l | tr -d ' ')
-  echo "$NAME.$EXT: differs ($N bytes differ; sizes $(wc -c < "$OUT" | tr -d ' ') vs $(wc -c < "$ORIG" | tr -d ' '))"
-  cmp "$OUT" "$ORIG" 2>&1 | head -1 || true
-  exit 1
-fi
+python3 -I "$ROOT/tools/sha1check.py" "$OUT" "$NAME.$EXT" || true

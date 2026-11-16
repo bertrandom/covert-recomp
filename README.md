@@ -2,7 +2,7 @@
 
 Source for all 18 executables of Sid Meier's Covert Action (MicroProse, 1990), and
 the scripts that build them with the original Microsoft toolchain. Each one comes
-out byte-identical to the shipped file:
+out byte-identical to the shipped file (`SHA1SUMS` lists their SHA-1):
 
 - the eight programs, in C (plus their small assembly modules): COVERT.EXE (the
   launcher), INTRO.EXE (hardware menu), GAME.EXE, FINAL.EXE, TAC.EXE (break-ins),
@@ -20,17 +20,20 @@ installed copy of the game.
 - DOSBox-X (the build runs the DOS compiler in it headlessly; on macOS the app in
   `/Applications`, elsewhere `dosbox-x` on the PATH or `$DOSBOX`)
 - Python 3
-- the Microsoft C 5.1 and MASM 5.10 disk sets (not included), for example WinWorld's
-  `Microsoft C 5.1 Optimizing Compiler (5.25).7z` and
-  `Microsoft Macro Assembler 5.1 (5.25).7z`. Put the archives in `resources/` and run
+- the Microsoft C 5.1 and MASM 5.10 disk sets (not included), as these two WinWorld
+  archives (`SHA1SUMS` has their SHA-1; nothing else is accepted):
+  - `Microsoft C 5.1 Optimizing Compiler (5.25).7z`
+  - `Microsoft Macro Assembler 5.1 (5.25).7z`
+- the `7z` tool (7-Zip), to open them
 
-  ```bash
-  tools/setup_toolchain.py
-  ```
+Put the two archives in `resources/` and run
 
-  (or name the archives, disk images or directories as arguments; `.7z` needs the
-  `7z` tool). It finds the files below by SHA-1 and installs them in
-  `toolchain/msc51/`:
+```bash
+tools/setup_toolchain.py
+```
+
+It checks each archive's SHA-1 before opening it, then installs these files in
+`toolchain/msc51/`, each checked against `SHA1SUMS`:
 
 | File | From | Used for |
 |---|---|---|
@@ -43,8 +46,8 @@ installed copy of the game.
 
 `SLIBCE.LIB` is not on the disks as such: MSC 5.1's SETUP builds it from the
 component libraries, and so does `setup_toolchain.py` (`LIB SLIBCE.LIB +SLIBCR.LIB
-+SLIBFP.LIB +EM.LIB +LIBH.LIB;` with LIB 3.11, in DOSBox-X), checking that the result
-is the expected file. The other eight are copied from the disks as they are.
++SLIBFP.LIB +EM.LIB +LIBH.LIB;` with LIB 3.11, in DOSBox-X). The other eight are
+copied from the disk images as they are.
 
 ## Building
 
@@ -52,60 +55,56 @@ is the expected file. The other eight are copied from the disks as they are.
 tools/build_all.sh
 ```
 
-builds everything into `build/out/` (about a minute). To check the result against
-an original game directory, point `ORIG_DIR` at it (or put it in `resources/Covert`):
+builds all 18 into `build/out/` (about a minute). Each one's SHA-1 is compared with
+the original release's (`SHA1SUMS`), and every line says whether it matches:
 
-```bash
-ORIG_DIR=/path/to/game tools/build_all.sh
+```
+GAME.EXE: built, matches the original release (8168312a996c)
+...
+18/18 built into build/out/: 18 match the original release, 0 differ
 ```
 
-Then each line says `byte-identical`, and the exit status is 0 only if all 18 are.
-Single programs: `tools/rebuild/build.sh GAME`; single drivers:
-`tools/drivers/build.sh MGRAPHIC`.
+A difference is reported but isn't an error: once you change the source, the
+executables are expected to differ (`GAME.EXE: built, DIFFERS from the original
+release (SHA-1 …, expected …)`), and they're still built. The exit status is non-zero
+only if something failed to build. Single programs: `tools/rebuild/build.sh GAME`;
+single drivers: `tools/drivers/build.sh MGRAPHIC`.
 
 **FINAL.EXE and the copy protection.** `identify_leader_faces` (pick the leader's
 face from the manual) is the copy protection. The GOG and eXoDOS releases have it
 disabled by a two-byte patch (a JNE replaced by two NOPs), which the build applies
-by default. `NO_PATCHES=1` builds the 1990 floppy release's FINAL.EXE instead:
+by default, and `SHA1SUMS` lists that FINAL.EXE. `NO_PATCHES=1` builds the 1990
+floppy release's FINAL.EXE instead, checked against its own hash:
 
 ```bash
-NO_PATCHES=1 ORIG_DIR=/path/to/floppy/game tools/rebuild/build.sh FINAL
+NO_PATCHES=1 tools/rebuild/build.sh FINAL
 ```
-
-### Getting an original game directory to compare with
-
-`tools/extract_game.py SOURCE OUTDIR` unpacks the game from any of these releases:
-the GOG Windows installer (needs `innoextract`), the GOG macOS `.pkg`, the GOG Linux
-`.sh`, the eXoDOS `.zip`, and the 3.5" or 5.25" floppy sets (a `.7z` of disk images,
-needs `7z`; disks are installed in order like INSTALL.BAT). All of them give the same
-files except FINAL.EXE (patched in the GOG/eXoDOS releases, not on the floppies).
 
 ### Docker
 
-`docker/Dockerfile` (Debian: DOSBox-X, Python 3, `innoextract`, `7zip`) builds
-everything without installing anything locally. The image contains only this
-repository's sources and tools, no game files and no Microsoft files, so it can be
-built once and shared:
+`docker/Dockerfile` (Debian: DOSBox-X, Python 3, `7zip`) builds everything without
+installing anything locally. The image contains only this repository's sources and
+tools, no game files and no Microsoft files, so it can be built once and shared:
 
 ```bash
 docker build -f docker/Dockerfile -t covert-recomp .
 ```
 
-To use it, make a folder with the two Microsoft disk archives in it (and, to compare,
-an original game directory named `original`), and mount it at `/work`:
+To use it, make a folder with the two Microsoft disk archives in it and mount it at
+`/work`:
 
 ```bash
 docker run --rm -v "/path/to/folder:/work" covert-recomp
 ```
 
 In Docker Desktop: Images > `covert-recomp` > Run > Optional settings > Volumes, host
-path = the folder, container path = `/work`. The container sets up the toolchain
-from the archives (kept in `msc51/` in the folder, so later runs skip that step),
-builds all 18 executables into `out/` in the folder, and compares them with
-`original/` if it's there. The log shows one line per executable. Without the
+path = the folder, container path = `/work`. The container checks the archives'
+SHA-1 and sets up the toolchain from them (kept in `msc51/` in the folder, so later
+runs skip that step), then builds all 18 executables into `out/` in the folder, with
+one line per executable saying whether it matches the original release. Without the
 archives it stops with a message saying what to provide. A ready toolchain can also
-be mounted directly at `/covert/toolchain/msc51`. Other commands run instead of the
-build when given as arguments, e.g. `tools/extract_game.py`.
+be mounted directly at `/covert/toolchain/msc51`, and `-e NO_PATCHES=1` builds the
+floppy FINAL.EXE.
 
 ## Layout
 
@@ -122,8 +121,9 @@ build when given as arguments, e.g. `tools/extract_game.py`.
 | `tools/drivers/build.sh` | the driver build |
 | `tools/dosrun.sh` | runs DOS commands in DOSBox-X with `C:` = `toolchain/msc51` and `D:` = `build/` |
 | `tools/omfsig.py` | OMF object reader used by `baseline.py` |
-| `tools/extract_game.py` | unpacks a game release (for the comparison) |
-| `tools/setup_toolchain.py` | installs `toolchain/msc51` from the Microsoft disk archives |
+| `tools/setup_toolchain.py` | installs `toolchain/msc51` from the Microsoft disk archives (SHA-1 checked) |
+| `tools/sha1check.py` | compares a built file with `SHA1SUMS` |
+| `SHA1SUMS` | SHA-1 of the two archives, the toolchain files and the 18 executables |
 | `decomp/*/functions*.txt`, `tools/names/*.lib.txt` | function names and addresses per program (from the analysis), used to name and place symbols |
 | `toolchain/msc51/` | the Microsoft files (installed by `setup_toolchain.py`) |
 | `resources/` | where you put the disk archives (ignored by git) |
