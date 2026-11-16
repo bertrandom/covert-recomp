@@ -6,8 +6,8 @@
 # to build/DOSRUN.LOG, which is printed afterwards.
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TC="$ROOT/toolchain/msc51"
-for f in BIN/CL.EXE BIN/C1.EXE BIN/C2.EXE BIN/C3.EXE BIN/MASM.EXE BIN/LINK.EXE BIN/EXEMOD.EXE LIB/SLIBCE.LIB INCLUDE/STDIO.H; do
+TC="${TOOLCHAIN_DIR:-$ROOT/toolchain/msc51}"     # TOOLCHAIN_DIR: another C: (setup_toolchain.py)
+[ -n "$TOOLCHAIN_DIR" ] || for f in BIN/CL.EXE BIN/C1.EXE BIN/C2.EXE BIN/C3.EXE BIN/MASM.EXE BIN/LINK.EXE BIN/EXEMOD.EXE LIB/SLIBCE.LIB INCLUDE/STDIO.H; do
   if [ ! -f "$TC/$f" ]; then
     echo "missing toolchain/msc51/$f: the Microsoft C 5.1 / MASM 5.10 files go in toolchain/msc51 (see README.md)" >&2
     exit 2
@@ -30,7 +30,7 @@ rm -f "$B/DOSRUN.LOG"
 } > "$B/DOSRUN.BAT"
 "$DOSBOX" -silent -fastlaunch -nogui -defaultconf \
   -set "dosbox machine=svga_s3" -set "cpu cycles=max" -set "dos ver=3.30" \
-  -c "MOUNT C \"$ROOT/toolchain/msc51\"" -c "MOUNT D \"$B\"" \
+  -c "MOUNT C \"$TC\"" -c "MOUNT D \"$B\"" \
   -c "SET PATH=C:\\BIN" -c "SET INCLUDE=C:\\INCLUDE" -c "SET LIB=C:\\LIB" -c "SET TMP=D:\\" \
   -c "D:" -c "CALL D:\\DOSRUN.BAT" > /dev/null 2>&1 || true
 [ -f "$B/DOSRUN.LOG" ] && tr -d '\r' < "$B/DOSRUN.LOG"

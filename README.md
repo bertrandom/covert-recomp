@@ -20,7 +20,17 @@ installed copy of the game.
 - DOSBox-X (the build runs the DOS compiler in it headlessly; on macOS the app in
   `/Applications`, elsewhere `dosbox-x` on the PATH or `$DOSBOX`)
 - Python 3
-- the Microsoft C 5.1 and MASM 5.10 files below in `toolchain/msc51/` (not included)
+- the Microsoft C 5.1 and MASM 5.10 disk sets (not included), for example WinWorld's
+  `Microsoft C 5.1 Optimizing Compiler (5.25).7z` and
+  `Microsoft Macro Assembler 5.1 (5.25).7z`. Put the archives in `resources/` and run
+
+  ```bash
+  tools/setup_toolchain.py
+  ```
+
+  (or name the archives, disk images or directories as arguments; `.7z` needs the
+  `7z` tool). It finds the files below by SHA-1 and installs them in
+  `toolchain/msc51/`:
 
 | File | From | Used for |
 |---|---|---|
@@ -32,8 +42,9 @@ installed copy of the game.
 | `BIN/MASM.EXE` | MASM 5.10 | the assembly sources |
 
 `SLIBCE.LIB` is not on the disks as such: MSC 5.1's SETUP builds it from the
-component libraries (small model, emulator floating point). The other files are
-copied from the disks as they are.
+component libraries, and so does `setup_toolchain.py` (`LIB SLIBCE.LIB +SLIBCR.LIB
++SLIBFP.LIB +EM.LIB +LIBH.LIB;` with LIB 3.11, in DOSBox-X), checking that the result
+is the expected file. The other eight are copied from the disks as they are.
 
 ## Building
 
@@ -74,19 +85,27 @@ files except FINAL.EXE (patched in the GOG/eXoDOS releases, not on the floppies)
 `docker/Dockerfile` (Debian: DOSBox-X, Python 3, `innoextract`, `7zip`) builds
 everything without installing anything locally. The image contains only this
 repository's sources and tools, no game files and no Microsoft files, so it can be
-built once and shared; the toolchain directory is mounted when it runs:
+built once and shared:
 
 ```bash
 docker build -f docker/Dockerfile -t covert-recomp .
 ```
 
+To use it, make a folder with the two Microsoft disk archives in it (and, to compare,
+an original game directory named `original`), and mount it at `/work`:
+
 ```bash
-docker run --rm -v "$PWD/toolchain/msc51:/covert/toolchain/msc51:ro" -v "$PWD/out:/covert/build/out" covert-recomp
+docker run --rm -v "/path/to/folder:/work" covert-recomp
 ```
 
-Add `-v /path/to/game:/covert/resources/Covert:ro` to check against an original.
-Without the toolchain mounted, the container stops with a message naming the
-missing file.
+In Docker Desktop: Images > `covert-recomp` > Run > Optional settings > Volumes, host
+path = the folder, container path = `/work`. The container sets up the toolchain
+from the archives (kept in `msc51/` in the folder, so later runs skip that step),
+builds all 18 executables into `out/` in the folder, and compares them with
+`original/` if it's there. The log shows one line per executable. Without the
+archives it stops with a message saying what to provide. A ready toolchain can also
+be mounted directly at `/covert/toolchain/msc51`. Other commands run instead of the
+build when given as arguments, e.g. `tools/extract_game.py`.
 
 ## Layout
 
@@ -104,9 +123,11 @@ missing file.
 | `tools/dosrun.sh` | runs DOS commands in DOSBox-X with `C:` = `toolchain/msc51` and `D:` = `build/` |
 | `tools/omfsig.py` | OMF object reader used by `baseline.py` |
 | `tools/extract_game.py` | unpacks a game release (for the comparison) |
+| `tools/setup_toolchain.py` | installs `toolchain/msc51` from the Microsoft disk archives |
 | `decomp/*/functions*.txt`, `tools/names/*.lib.txt` | function names and addresses per program (from the analysis), used to name and place symbols |
-| `toolchain/msc51/` | the Microsoft files (you provide them) |
-| `docker/` | the build image |
+| `toolchain/msc51/` | the Microsoft files (installed by `setup_toolchain.py`) |
+| `resources/` | where you put the disk archives (ignored by git) |
+| `docker/` | the build image and its entry point |
 
 Compiler options are `CL /c /AS /Gs /Oas /Zl` (FILEIO with `/Ox`, a few objects
 with `/Zd`); the per-object settings are in `baseline.py`.

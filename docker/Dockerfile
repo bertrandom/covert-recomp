@@ -1,14 +1,14 @@
 # Build environment for Covert Action: DOSBox-X runs MSC 5.1, MASM 5.10 and LINK.
 # The image holds only the sources and tools: no game files and no Microsoft files.
-# The toolchain is mounted at run time at /covert/toolchain/msc51.
 #
 #   docker build -f docker/Dockerfile -t covert-recomp .
 #
-# Build all 18 executables into ./out:
-#   docker run --rm -v "/path/to/msc51:/covert/toolchain/msc51:ro" \
-#       -v "$PWD/out:/covert/build/out" covert-recomp
-# ...and check them against an original game directory: add
-#       -v "/path/to/game:/covert/resources/Covert:ro"
+# Put the Microsoft C 5.1 and MASM 5.10 disk archives (.7z) in a folder and mount it
+# at /work; the toolchain is set up from them (cached in msc51/ there), all 18
+# executables are built into out/ there, and compared with original/ if present:
+#   docker run --rm -v "/path/to/folder:/work" covert-recomp
+# (Docker Desktop: Run > Optional settings > Volumes: host folder -> /work.)
+# A ready toolchain can be mounted at /covert/toolchain/msc51 instead.
 # Unpack a release (GOG installers, eXoDOS zip, floppy sets) into ./game:
 #   docker run --rm -v "/path/to/releases:/in:ro" -v "$PWD/game:/out" covert-recomp \
 #       tools/extract_game.py "/in/<installer or archive>" /out
@@ -25,6 +25,6 @@ ENV SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy DOSBOX=/usr/bin/dosbox-x
 
 WORKDIR /covert
 COPY . .
-RUN chmod +x tools/*.sh tools/rebuild/*.sh tools/drivers/*.sh tools/extract_game.py
+RUN chmod +x docker/entrypoint.sh tools/*.sh tools/rebuild/*.sh tools/drivers/*.sh tools/*.py
 
-CMD ["tools/build_all.sh"]
+ENTRYPOINT ["docker/entrypoint.sh"]
