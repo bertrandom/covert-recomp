@@ -19,11 +19,13 @@ installed copy of the game. The easiest way to build is with Docker
 ## What you need
 
 Both ways of building need the Microsoft C 5.1 and MASM 5.10 disk sets, which are
-not included, as these two WinWorld archives (`SHA1SUMS` has their SHA-1; nothing
-else is accepted):
+not included. Download these two archives from WinWorld (the 5.25" disk versions);
+only files with exactly these SHA-1 hashes are accepted (they're also in `SHA1SUMS`):
 
-- `Microsoft C 5.1 Optimizing Compiler (5.25).7z`
-- `Microsoft Macro Assembler 5.1 (5.25).7z`
+| Archive | Download from | SHA-1 |
+|---|---|---|
+| `Microsoft C 5.1 Optimizing Compiler (5.25).7z` | [WinWorld: Microsoft C/C++ 5.x](https://winworldpc.com/product/microsoft-c-c/5x) | `8fe843150ea5ac2598703c7e6c893b465ae38967` |
+| `Microsoft Macro Assembler 5.1 (5.25).7z` | [WinWorld: Macro Assembler 5.x](https://winworldpc.com/product/macro-assembler/5x) | `2a4a0141a3c938b3cf0adc0018168ccc96305ae9` |
 
 ## Building with Docker (easiest)
 
