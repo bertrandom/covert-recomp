@@ -24,8 +24,8 @@ only files with exactly these SHA-1 hashes are accepted (they're also in `SHA1SU
 
 | Archive | Download from | SHA-1 |
 |---|---|---|
-| `Microsoft C 5.1 Optimizing Compiler (5.25).7z` | [WinWorld: Microsoft C/C++ 5.x](https://winworldpc.com/product/microsoft-c-c/5x) | `8fe843150ea5ac2598703c7e6c893b465ae38967` |
-| `Microsoft Macro Assembler 5.1 (5.25).7z` | [WinWorld: Macro Assembler 5.x](https://winworldpc.com/product/macro-assembler/5x) | `2a4a0141a3c938b3cf0adc0018168ccc96305ae9` |
+| `Microsoft C 5.1 Optimizing Compiler (5.25).7z` | [WinWorld: Microsoft C Compiler 5.1 (1988) (5.25-1.2mb)](https://winworldpc.com/product/microsoft-c-c/5x) | `8fe843150ea5ac2598703c7e6c893b465ae38967` |
+| `Microsoft Macro Assembler 5.1 (5.25).7z` | [WinWorld: Microsoft Macro Assembler 5.1 (5.25)](https://winworldpc.com/product/macro-assembler/5x) | `2a4a0141a3c938b3cf0adc0018168ccc96305ae9` |
 
 ## Building with Docker (easiest)
 
