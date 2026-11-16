@@ -35,21 +35,24 @@ The easiest way to build is with Docker: the image has everything else (DOSBox-X
 Python 3, 7-Zip), so nothing needs to be installed or set up by hand. It contains
 only this repository's sources and tools, no game files and no Microsoft files.
 
-1. Build the image once:
+1. Get the image. It is published for linux/amd64 and linux/arm64 (Apple silicon):
 
    ```bash
-   docker build -f docker/Dockerfile -t covert-recomp .
+   docker pull ghcr.io/bertrandom/covert-recomp
    ```
 
+   In Docker Desktop, search for `ghcr.io/bertrandom/covert-recomp` and pull it.
+   (Or build it yourself: `docker build -f docker/Dockerfile -t
+   ghcr.io/bertrandom/covert-recomp .`)
 2. Make a folder and put the two Microsoft archives in it.
 3. Run the image with that folder mounted at `/work`:
 
    ```bash
-   docker run --rm -v "/path/to/folder:/work" covert-recomp
+   docker run --rm -v "/path/to/folder:/work" ghcr.io/bertrandom/covert-recomp
    ```
 
-   In Docker Desktop: Images > `covert-recomp` > Run > Optional settings > Volumes,
-   host path = the folder, container path = `/work`, then Run.
+   In Docker Desktop: Images > `ghcr.io/bertrandom/covert-recomp` > Run > Optional
+   settings > Volumes, host path = the folder, container path = `/work`, then Run.
 
 The container checks the archives' SHA-1, sets up the toolchain from them (kept in
 `msc51/` in the folder, so later runs skip that step), and builds all 18 executables
@@ -148,6 +151,7 @@ NO_PATCHES=1 tools/rebuild/build.sh FINAL
 | `toolchain/msc51/` | the Microsoft files (installed by `setup_toolchain.py`) |
 | `resources/` | where you put the disk archives (ignored by git) |
 | `docker/` | the build image and its entry point |
+| `.github/workflows/docker.yml` | builds the image (amd64 and arm64), smoke-tests it and publishes it to `ghcr.io/bertrandom/covert-recomp` on pushes to `main` (`latest`) and `v*` tags (the version) |
 
 Compiler options are `CL /c /AS /Gs /Oas /Zl` (FILEIO with `/Ox`, a few objects
 with `/Zd`); the per-object settings are in `baseline.py`.
