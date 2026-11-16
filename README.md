@@ -13,20 +13,58 @@ out byte-identical to the shipped file (`SHA1SUMS` lists their SHA-1):
 
 No game files are needed to build. The game's data files (pictures, animations,
 text) are not part of this repository; to play, copy the built executables over an
-installed copy of the game.
+installed copy of the game. The easiest way to build is with Docker
+([below](#building-with-docker-easiest)).
 
 ## What you need
+
+Both ways of building need the Microsoft C 5.1 and MASM 5.10 disk sets, which are
+not included, as these two WinWorld archives (`SHA1SUMS` has their SHA-1; nothing
+else is accepted):
+
+- `Microsoft C 5.1 Optimizing Compiler (5.25).7z`
+- `Microsoft Macro Assembler 5.1 (5.25).7z`
+
+## Building with Docker (easiest)
+
+The easiest way to build is with Docker: the image has everything else (DOSBox-X,
+Python 3, 7-Zip), so nothing needs to be installed or set up by hand. It contains
+only this repository's sources and tools, no game files and no Microsoft files.
+
+1. Build the image once:
+
+   ```bash
+   docker build -f docker/Dockerfile -t covert-recomp .
+   ```
+
+2. Make a folder and put the two Microsoft archives in it.
+3. Run the image with that folder mounted at `/work`:
+
+   ```bash
+   docker run --rm -v "/path/to/folder:/work" covert-recomp
+   ```
+
+   In Docker Desktop: Images > `covert-recomp` > Run > Optional settings > Volumes,
+   host path = the folder, container path = `/work`, then Run.
+
+The container checks the archives' SHA-1, sets up the toolchain from them (kept in
+`msc51/` in the folder, so later runs skip that step), and builds all 18 executables
+into `out/` in the folder. The log has one line per executable saying whether it
+matches the original release (see [Checking the result](#checking-the-result)).
+Without the archives it stops with a message saying what to provide. `-e
+NO_PATCHES=1` builds the floppy FINAL.EXE (see below), and a ready toolchain can also
+be mounted directly at `/covert/toolchain/msc51`.
+
+## Building without Docker
+
+You also need:
 
 - DOSBox-X (the build runs the DOS compiler in it headlessly; on macOS the app in
   `/Applications`, elsewhere `dosbox-x` on the PATH or `$DOSBOX`)
 - Python 3
-- the Microsoft C 5.1 and MASM 5.10 disk sets (not included), as these two WinWorld
-  archives (`SHA1SUMS` has their SHA-1; nothing else is accepted):
-  - `Microsoft C 5.1 Optimizing Compiler (5.25).7z`
-  - `Microsoft Macro Assembler 5.1 (5.25).7z`
-- the `7z` tool (7-Zip), to open them
+- the `7z` tool (7-Zip), to open the archives
 
-Put the two archives in `resources/` and run
+Put the two archives in `resources/` and set up the toolchain once:
 
 ```bash
 tools/setup_toolchain.py
@@ -49,14 +87,19 @@ component libraries, and so does `setup_toolchain.py` (`LIB SLIBCE.LIB +SLIBCR.L
 +SLIBFP.LIB +EM.LIB +LIBH.LIB;` with LIB 3.11, in DOSBox-X). The other eight are
 copied from the disk images as they are.
 
-## Building
+Then build:
 
 ```bash
 tools/build_all.sh
 ```
 
-builds all 18 into `build/out/` (about a minute). Each one's SHA-1 is compared with
-the original release's (`SHA1SUMS`), and every line says whether it matches:
+This builds all 18 into `build/out/` (about a minute). Single programs:
+`tools/rebuild/build.sh GAME`; single drivers: `tools/drivers/build.sh MGRAPHIC`.
+
+## Checking the result
+
+Each built executable's SHA-1 is compared with the original release's (`SHA1SUMS`),
+and every line says whether it matches:
 
 ```
 GAME.EXE: built, matches the original release (8168312a996c)
@@ -67,8 +110,7 @@ GAME.EXE: built, matches the original release (8168312a996c)
 A difference is reported but isn't an error: once you change the source, the
 executables are expected to differ (`GAME.EXE: built, DIFFERS from the original
 release (SHA-1 …, expected …)`), and they're still built. The exit status is non-zero
-only if something failed to build. Single programs: `tools/rebuild/build.sh GAME`;
-single drivers: `tools/drivers/build.sh MGRAPHIC`.
+only if something failed to build.
 
 **FINAL.EXE and the copy protection.** `identify_leader_faces` (pick the leader's
 face from the manual) is the copy protection. The GOG and eXoDOS releases have it
@@ -79,32 +121,6 @@ floppy release's FINAL.EXE instead, checked against its own hash:
 ```bash
 NO_PATCHES=1 tools/rebuild/build.sh FINAL
 ```
-
-### Docker
-
-`docker/Dockerfile` (Debian: DOSBox-X, Python 3, `7zip`) builds everything without
-installing anything locally. The image contains only this repository's sources and
-tools, no game files and no Microsoft files, so it can be built once and shared:
-
-```bash
-docker build -f docker/Dockerfile -t covert-recomp .
-```
-
-To use it, make a folder with the two Microsoft disk archives in it and mount it at
-`/work`:
-
-```bash
-docker run --rm -v "/path/to/folder:/work" covert-recomp
-```
-
-In Docker Desktop: Images > `covert-recomp` > Run > Optional settings > Volumes, host
-path = the folder, container path = `/work`. The container checks the archives'
-SHA-1 and sets up the toolchain from them (kept in `msc51/` in the folder, so later
-runs skip that step), then builds all 18 executables into `out/` in the folder, with
-one line per executable saying whether it matches the original release. Without the
-archives it stops with a message saying what to provide. A ready toolchain can also
-be mounted directly at `/covert/toolchain/msc51`, and `-e NO_PATCHES=1` builds the
-floppy FINAL.EXE.
 
 ## Layout
 
