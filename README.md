@@ -1,8 +1,8 @@
 # Covert Action recompiled
 
-Source for all 18 executables of Sid Meier's Covert Action (MicroProse, 1990), and
-the scripts that build them with the original Microsoft toolchain. Each one comes
-out byte-identical to the shipped file (`SHA1SUMS` lists their SHA-1):
+This is an AI-assisted generated source for all 18 executables of Sid Meier's Covert Action (MicroProse, 1990), and the scripts that build them with the original Microsoft toolchain.
+
+Each one comes out byte-identical to the shipped file (`SHA1SUMS` lists their SHA-1):
 
 - the eight programs, in C (plus their small assembly modules): COVERT.EXE (the
   launcher), INTRO.EXE (hardware menu), GAME.EXE, FINAL.EXE, TAC.EXE (break-ins),
