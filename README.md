@@ -2,6 +2,8 @@
 
 This is an AI-assisted generated source for all 18 executables of Sid Meier's Covert Action (MicroProse, 1990) as well as scripts that build them with the original Microsoft toolchain.
 
+<img width="800" height="939" alt="Sid Meier_s Covert Action-01 4" src="https://github.com/user-attachments/assets/d2900339-e0fe-4600-9902-98d2b6d010d1" />
+
 Each one comes out byte-identical to the shipped file (`SHA1SUMS` lists their SHA-1):
 
 - the eight programs, in C (plus their small assembly modules): COVERT.EXE (the
