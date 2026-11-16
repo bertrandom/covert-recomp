@@ -1,6 +1,6 @@
 # Covert Action recompiled
 
-This is an AI-assisted generated source for all 18 executables of Sid Meier's Covert Action (MicroProse, 1990), and the scripts that build them with the original Microsoft toolchain.
+This is an AI-assisted generated source for all 18 executables of Sid Meier's Covert Action (MicroProse, 1990) as well as scripts that build them with the original Microsoft toolchain.
 
 Each one comes out byte-identical to the shipped file (`SHA1SUMS` lists their SHA-1):
 
