@@ -7,6 +7,11 @@
 ; volume and pitch envelopes. The sequencer (sound_tick) runs from the timer
 ; interrupt at about 60 Hz, chaining to the BIOS handler every third tick.
 ;
+; Names of the music player's, engine's and gunfire routines follow the C# port
+; in Covert Action Enhanced
+; (github.com/Arkana-Mechanika-Studios/covert-action-enhanced), matched by
+; address; the gunfire routines take its RSOUND names in all three drivers.
+;
 ; Rebuilds byte-identical with MASM 5.10 / LINK 5.01: tools/drivers/build.sh TSOUND
 ; (first pass by tools/drivers/disasm_masm.py with tools/drivers/TSOUND.hints)
 
@@ -673,7 +678,7 @@ sound_tick:
 	je	fx_21
 	cmp	byte ptr b_D00EC, 0
 	je	L_014A
-	call	sub_030A
+	call	gunfire_tick
 L_014A:
 	lea	di, voice0
 	call	voice_tick
@@ -822,9 +827,10 @@ L_0293:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0294
+; keep_shooting
+; Gunfire: start the shot voice if it is idle, else move it to a random place in its tune.
 ; ----------------------------------------------------------------------------
-sub_0294:
+keep_shooting:
 	cmp	word ptr voice0+1Bh, 0
 	je	L_02B5
 	cmp	word ptr voice0+1Bh, 1
@@ -843,7 +849,7 @@ L_02B5:
 	inc	ax
 	inc	ax
 	mov	word ptr w_D00E2, ax
-	call	sub_02FB
+	call	default_shot_sound
 	lea	bx, w_D15B1
 	jmp	start_voice0
 L_02CA:
@@ -856,31 +862,35 @@ L_02CA:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_02E6
+; end_shots
+; Gunfire: let the shot voice end (its loop goes to the silent effect fx_1_data).
 ; ----------------------------------------------------------------------------
-sub_02E6:
+end_shots:
 	lea	bx, fx_1_data
 	mov	word ptr voice0+14h, bx
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_02EF
+; end_barrage
+; Gunfire: let the two rhythm voices end, then set the default shot sound.
 ; ----------------------------------------------------------------------------
-sub_02EF:
+end_barrage:
 	lea	bx, fx_1_data
 	mov	word ptr voice1+14h, bx
 	mov	word ptr voice2+14h, bx
 
 ; ----------------------------------------------------------------------------
-; sub_02FB
+; default_shot_sound
+; Gunfire: set the default shot sound (falls into set_shot_sound).
 ; ----------------------------------------------------------------------------
-sub_02FB:
+default_shot_sound:
 	mov	al, 7
 
 ; ----------------------------------------------------------------------------
-; sub_02FD
+; set_shot_sound
+; AL = shot sound, written into the four sound bytes of the shot tune.
 ; ----------------------------------------------------------------------------
-sub_02FD:
+set_shot_sound:
 	mov	byte ptr b_D15B4, al
 	mov	byte ptr b_D15D3, al
 	mov	byte ptr b_D15F2, al
@@ -888,44 +898,45 @@ sub_02FD:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_030A
+; gunfire_tick
+; Gunfire, each tick: stop when the level or the second word is 0, else light fire (levels 1-3) or heavy fire (4 and 5).
 ; ----------------------------------------------------------------------------
-sub_030A:
+gunfire_tick:
 	cmp	word ptr w_D00E8, 0
 	je	L_02CA
 	cmp	word ptr w_D00EA, 0
 	je	L_02CA
 	cmp	word ptr w_D00E8, 4
 	jb	L_0325
-	call	sub_034A
+	call	heavy_gunfire
 	jmp	L_0328
 L_0325:
-	call	sub_032F
+	call	light_gunfire
 L_0328:
 	mov	ax, word ptr w_D00E8
 	mov	word ptr w_D00E6, ax
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_032F
+; light_gunfire
 ; ----------------------------------------------------------------------------
-sub_032F:
+light_gunfire:
 	cmp	word ptr w_D00E6, 4
 	jb	L_0343
-	call	sub_02E6
+	call	end_shots
 	cmp	word ptr w_D00E6, 4
 	jb	L_0343
-	call	sub_02EF
+	call	end_barrage
 L_0343:
-	call	sub_03B8
-	call	sub_03FB
+	call	keep_rhythm
+	call	choose_shot_gap
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_034A
+; heavy_gunfire
 ; ----------------------------------------------------------------------------
-sub_034A:
-	call	sub_0294
+heavy_gunfire:
+	call	keep_shooting
 	cmp	word ptr w_D00E2, 0
 	jne	L_035C
 	mov	bx, word ptr w_D00E4
@@ -938,16 +949,16 @@ L_035C:
 	je	L_0378
 	cmp	word ptr w_D00E6, 5
 	jne	L_0378
-	call	sub_02EF
+	call	end_barrage
 L_0378:
-	call	sub_03B8
-	call	sub_03FB
+	call	keep_rhythm
+	call	choose_shot_gap
 	ret
 L_037F:
 	cmp	word ptr w_D00E6, 5
 	je	L_03AD
 	mov	al, 3
-	call	sub_02FD
+	call	set_shot_sound
 	lea	bx, w_D105B
 	call	start_voice1
 	lea	bx, w_D151D
@@ -959,26 +970,28 @@ L_037F:
 	jns	L_03AA
 	mov	ax, word ptr w_D00E4
 L_03AA:
-	call	sub_0421
+	call	set_rhythm_gap
 L_03AD:
 	cmp	byte ptr voice2+1Bh, 1
 	jne	L_03FA
-	call	sub_03C6
+	call	choose_rhythm
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_03B8
+; keep_rhythm
+; Gunfire: start the rhythm voice if it is idle.
 ; ----------------------------------------------------------------------------
-sub_03B8:
+keep_rhythm:
 	cmp	byte ptr voice2+1Bh, 0
 	jne	L_03FA
 	lea	bx, w_D105B
 	call	start_voice2
 
 ; ----------------------------------------------------------------------------
-; sub_03C6
+; choose_rhythm
+; Gunfire: pick the rhythm voice's next pattern at random for the level.
 ; ----------------------------------------------------------------------------
-sub_03C6:
+choose_rhythm:
 	mov	bx, word ptr w_D00E8
 	dec	bx
 	shl	bx, 1
@@ -1004,9 +1017,10 @@ L_03FA:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_03FB
+; choose_shot_gap
+; Gunfire: the gap from the random number, the level and the second word, at most FFh (falls into set_rhythm_gap).
 ; ----------------------------------------------------------------------------
-sub_03FB:
+choose_shot_gap:
 	call	random
 	and	ax, 0FFh
 	inc	ax
@@ -1020,13 +1034,14 @@ sub_03FB:
 	mul	dx
 	add	ax, bx
 	cmp	ax, 0FFh
-	jle	sub_0421
+	jle	set_rhythm_gap
 	mov	ax, 0FFh
 
 ; ----------------------------------------------------------------------------
-; sub_0421
+; set_rhythm_gap
+; AL = gap, written into the rhythm tune.
 ; ----------------------------------------------------------------------------
-sub_0421:
+set_rhythm_gap:
 	shr	ax, 1
 	mov	byte ptr w_D105B, al
 	adc	ax, 0
@@ -1036,13 +1051,13 @@ L_042D:
 	mov	bx, word ptr [di+14h]
 	mov	al, byte ptr [bx]
 	or	al, al
-	je	sub_0439
+	je	end_voice
 	jmp	L_044F
 
 ; ----------------------------------------------------------------------------
-; sub_0439
+; end_voice
 ; ----------------------------------------------------------------------------
-sub_0439:
+end_voice:
 	mov	al, byte ptr [di+17h]
 	or	al, al
 	je	L_0444
@@ -1055,11 +1070,11 @@ L_0444:
 L_044C:
 	jmp	L_0224
 L_044F:
-	call	sub_0483
+	call	read_note_commands
 	jne	L_0481
 	mov	byte ptr [di+1Bh], al
 	cmp	al, 0
-	je	sub_0439
+	je	end_voice
 	mov	al, byte ptr [di+1Ah]
 	mov	byte ptr [di+17h], al
 	cmp	byte ptr [di+0Ah], 0
@@ -1083,9 +1098,9 @@ L_0482:
 	inc	bx
 
 ; ----------------------------------------------------------------------------
-; sub_0483
+; read_note_commands
 ; ----------------------------------------------------------------------------
-sub_0483:
+read_note_commands:
 	mov	al, byte ptr [bx]
 	inc	bx
 	test	al, 80h
@@ -1135,7 +1150,7 @@ L_04CD:
 L_04DF:
 	mov	word ptr [di+10h], bx
 	mov	word ptr [di+0Dh], bx
-	jmp	sub_0483
+	jmp	read_note_commands
 L_04E7:
 	cmp	al, 0
 	je	L_04DF
@@ -1143,7 +1158,7 @@ L_04E7:
 L_04EE:
 	mov	bx, word ptr [di+10h]
 	mov	word ptr [di+0Dh], bx
-	jmp	sub_0483
+	jmp	read_note_commands
 L_04F6:
 	cmp	al, 0F3h
 	jne	L_051B
@@ -1155,14 +1170,14 @@ L_04F6:
 	jne	L_0515
 L_0508:
 	mov	word ptr [di+0Dh], bx
-	jmp	sub_0483
+	jmp	read_note_commands
 L_050E:
 	cmp	al, 0
 	je	L_0508
 	mov	byte ptr [di+0Ch], al
 L_0515:
 	mov	bx, word ptr [di+0Dh]
-	jmp	sub_0483
+	jmp	read_note_commands
 L_051B:
 	cmp	al, 0B0h
 	jne	L_0527
@@ -1189,14 +1204,14 @@ L_0545:
 	xor	ax, ax
 	mov	word ptr [di+0Ah], ax
 	mov	byte ptr [di+9], al
-	jmp	sub_0483
+	jmp	read_note_commands
 L_0554:
 	cmp	al, 0E0h
 	jne	L_0563
 	xor	ax, ax
 	mov	word ptr [di+2], ax
 	mov	word ptr [di+4], ax
-	jmp	sub_0483
+	jmp	read_note_commands
 L_0563:
 	cmp	al, 0F5h
 	jne	L_057E
@@ -1223,7 +1238,7 @@ L_057E:
 	mov	word ptr [di+4], ax
 	mov	byte ptr [di+6], al
 	mov	word ptr [di+7], ax
-	jmp	sub_0483
+	jmp	read_note_commands
 L_0599:
 	cmp	al, 0F0h
 	mov	bx, word ptr [di+12h]
@@ -1233,7 +1248,7 @@ L_0599:
 	mov	word ptr [di+2], 0
 	mov	word ptr [di+6], 0
 	mov	word ptr [di+0Ah], 0
-	jmp	sub_0483
+	jmp	read_note_commands
 	db	39h,1Eh,0D6h,0,76h,57h
 ; BX = note list, AL = the chip's volume register: start the fifth voice block.
 start_voice4:
@@ -1276,7 +1291,7 @@ start_voice:
 	mov	byte ptr sound_paused, 0FFh
 	push	ax
 	push	bx
-	call	sub_0439
+	call	end_voice
 	pop	bx
 	pop	ax
 	mov	byte ptr [di+1Ah], al
@@ -1684,9 +1699,9 @@ fx_2:
 	jmp	start_voice3
 
 ; ----------------------------------------------------------------------------
-; sub_084A
+; idle_pitch
 ; ----------------------------------------------------------------------------
-sub_084A:
+idle_pitch:
 	call	random
 	and	ax, 7
 	add	ax, 6
@@ -1699,15 +1714,15 @@ L_0854:
 ; fx_23
 ; ----------------------------------------------------------------------------
 fx_23:
-	call	sub_084A
+	call	idle_pitch
 	mov	byte ptr b_D1829, al
 	mov	byte ptr b_D1848, al
 	mov	byte ptr b_D1867, al
-	call	sub_084A
+	call	idle_pitch
 	mov	byte ptr b_D182C, al
 	mov	byte ptr b_D184B, al
 	mov	byte ptr b_D184B, al
-	call	sub_084A
+	call	idle_pitch
 	lea	bx, w_D1823
 	call	start_voice1
 	lea	bx, w_D1842

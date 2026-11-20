@@ -155,3 +155,13 @@ NO_PATCHES=1 tools/rebuild/build.sh FINAL
 
 Compiler options are `CL /c /AS /Gs /Oas /Zl` (FILEIO with `/Ox`, a few objects
 with `/Zd`); the per-object settings are in `baseline.py`.
+
+## Credits
+
+The names of 65 routines in the AdLib, Roland MT-32 and Tandy sound drivers
+(`src/DRIVERS/ASOUND.ASM`, `RSOUND.ASM` and `TSOUND.ASM`: the music player, the car
+engine and the gunfire) come from the C# port of those drivers in
+[Covert Action Enhanced](https://github.com/Arkana-Mechanika-Studios/covert-action-enhanced)
+by Arkana Mechanika Studios. They were matched by routine address and checked against
+the code. The gunfire routines are the same code in all three drivers and use its
+RSOUND names in each.

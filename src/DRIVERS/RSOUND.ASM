@@ -8,6 +8,11 @@
 ; interrupt at about 60 Hz on its own stack in DATA, chaining to the BIOS
 ; handler every third tick; IRQ 2 (int 0Ah) is hooked to drain MPU input.
 ;
+; Names of the music player's, engine's and gunfire routines follow the C# port
+; in Covert Action Enhanced
+; (github.com/Arkana-Mechanika-Studios/covert-action-enhanced), matched by
+; address; the gunfire routines take its RSOUND names in all three drivers.
+;
 ; Rebuilds byte-identical with MASM 5.10 / LINK 5.01: tools/drivers/build.sh RSOUND
 ; (first pass by tools/drivers/disasm_masm.py with tools/drivers/RSOUND.hints)
 
@@ -1313,10 +1318,10 @@ sound_tick:
 	inc	word ptr cs:tick_count
 	cmp	byte ptr b_D1814, 0
 	je	L_0247
-	call	sub_0CC6
+	call	gunfire_tick
 L_0247:
 	call	far ptr random
-	call	sub_170E
+	call	voices_tick
 	mov	bx, word ptr cs:saved_ss
 	mov	ss, bx
 	mov	sp, word ptr cs:saved_sp
@@ -1729,9 +1734,9 @@ L_0537:
 	retf
 
 ; ----------------------------------------------------------------------------
-; sub_0546
+; start_voice
 ; ----------------------------------------------------------------------------
-sub_0546:
+start_voice:
 	mov	dl, byte ptr b_D2DA0
 	push	dx
 	mov	byte ptr b_D2DA0, 0
@@ -1801,25 +1806,25 @@ fx_2:
 	mov	ax, 0
 	lea	bx, w_D2DA2
 	lea	cx, w_D005E
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DC4
 	lea	cx, w_D00EE
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DE6
 	lea	cx, w_D019C
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E08
 	lea	cx, w_D02CC
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E2A
 	lea	cx, w_D0354
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E4C
 	lea	cx, w_D03F4
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E6E
 	lea	cx, w_D0490
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_39
@@ -1828,19 +1833,19 @@ fx_39:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D12C4
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DC4
 	lea	cx, w_D1306
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DE6
 	lea	cx, w_D1382
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E08
 	lea	cx, w_D13B8
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E2A
 	lea	cx, w_D13F0
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_40
@@ -1849,13 +1854,13 @@ fx_40:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D0946
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DC4
 	lea	cx, w_D0956
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E90
 	lea	cx, w_D0966
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_41
@@ -1864,22 +1869,22 @@ fx_41:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D097C
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DC4
 	lea	cx, w_D0A5E
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DE6
 	lea	cx, w_D0AB2
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E08
 	lea	cx, w_D0AF2
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E2A
 	lea	cx, w_D0B1C
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E4C
 	lea	cx, w_D0BB0
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_42
@@ -1888,22 +1893,22 @@ fx_42:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D0C82
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DC4
 	lea	cx, w_D0D3E
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DE6
 	lea	cx, w_D0DA6
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E08
 	lea	cx, w_D0E04
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E2A
 	lea	cx, w_D0CDE
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E90
 	lea	cx, w_D0E40
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_43
@@ -1912,19 +1917,19 @@ fx_43:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D0E7E
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DC4
 	lea	cx, w_D0EEC
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2DE6
 	lea	cx, w_D0FE8
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E08
 	lea	cx, w_D1158
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E90
 	lea	cx, w_D11D8
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_3
@@ -1933,7 +1938,7 @@ fx_3:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D1464
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_4
@@ -1942,7 +1947,7 @@ fx_4:
 	xor	ax, ax
 	lea	bx, w_D2E2A
 	lea	cx, w_D1472
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_33
@@ -1951,7 +1956,7 @@ fx_33:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D1480
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_34
@@ -1960,7 +1965,7 @@ fx_34:
 	xor	ax, ax
 	lea	bx, w_D2E2A
 	lea	cx, w_D1488
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_6
@@ -1969,7 +1974,7 @@ fx_6:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D1490
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_5
@@ -1978,7 +1983,7 @@ fx_5:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D14AC
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_7
@@ -1987,7 +1992,7 @@ fx_7:
 	xor	ax, ax
 	lea	bx, w_D2E4C
 	lea	cx, w_D1512
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_8
@@ -1996,7 +2001,7 @@ fx_8:
 	xor	ax, ax
 	lea	bx, w_D2E4C
 	lea	cx, w_D151A
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_9
@@ -2005,7 +2010,7 @@ fx_9:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D14B4
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_10
@@ -2014,10 +2019,10 @@ fx_10:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D1562
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E2A
 	lea	cx, w_D1570
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_13
@@ -2026,7 +2031,7 @@ fx_13:
 	xor	ax, ax
 	lea	bx, w_D2E2A
 	lea	cx, w_D14BE
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_14
@@ -2035,7 +2040,7 @@ fx_14:
 	xor	ax, ax
 	lea	bx, w_D2E2A
 	lea	cx, w_D14C6
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_15
@@ -2044,7 +2049,7 @@ fx_15:
 	xor	ax, ax
 	lea	bx, w_D2E2A
 	lea	cx, w_D14CE
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_18
@@ -2053,10 +2058,10 @@ fx_18:
 	xor	ax, ax
 	lea	bx, w_D2E4C
 	lea	cx, w_D14EC
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E90
 	lea	cx, w_D1428
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_30
@@ -2065,7 +2070,7 @@ fx_30:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D1586
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_22
@@ -2074,7 +2079,7 @@ fx_22:
 	xor	ax, ax
 	lea	bx, w_D2E90
 	lea	cx, w_D14FC
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_23
@@ -2083,10 +2088,10 @@ fx_23:
 	xor	ax, ax
 	lea	bx, w_D2DC4
 	lea	cx, w_D1508
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E90
 	lea	cx, w_D1502
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_24
@@ -2095,7 +2100,7 @@ fx_24:
 	xor	ax, ax
 	lea	bx, w_D2E90
 	lea	cx, w_D1510
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_19
@@ -2104,7 +2109,7 @@ fx_19:
 	xor	ax, ax
 	lea	bx, w_D2DE6
 	lea	cx, w_D1522
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_20
@@ -2113,7 +2118,7 @@ fx_20:
 	xor	ax, ax
 	lea	bx, w_D2DE6
 	lea	cx, w_D152A
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_28
@@ -2122,10 +2127,10 @@ fx_28:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D1536
-	call	sub_0546
+	call	start_voice
 	lea	bx, w_D2E2A
 	lea	cx, w_D154C
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_29
@@ -2134,7 +2139,7 @@ fx_29:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D157E
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_35
@@ -2172,7 +2177,7 @@ fx_16:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D14D6
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_17
@@ -2181,7 +2186,7 @@ fx_17:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D14DE
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_12
@@ -2190,7 +2195,7 @@ fx_12:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D1594
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_11
@@ -2199,7 +2204,7 @@ fx_11:
 	xor	ax, ax
 	lea	bx, w_D2E08
 	lea	cx, w_D15A2
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_31
@@ -2208,7 +2213,7 @@ fx_31:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D15AA
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_32
@@ -2217,7 +2222,7 @@ fx_32:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D15BC
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_44
@@ -2237,7 +2242,7 @@ fx_45:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D15BE
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_46
@@ -2246,7 +2251,7 @@ fx_46:
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D15D6
-	jmp	sub_0546
+	jmp	start_voice
 
 ; ----------------------------------------------------------------------------
 ; fx_26
@@ -2694,9 +2699,10 @@ random2:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0C4A
+; keep_shooting
+; Gunfire: start the shot voice if it is idle, else move it to a random place in its tune.
 ; ----------------------------------------------------------------------------
-sub_0C4A:
+keep_shooting:
 	cmp	word ptr w_D2DA2, 0
 	je	L_0C6B
 	cmp	word ptr w_D2DA2, 1
@@ -2715,11 +2721,11 @@ L_0C6B:
 	inc	ax
 	inc	ax
 	mov	word ptr w_D180A, ax
-	call	sub_0CB7
+	call	default_shot_sound
 	xor	ax, ax
 	lea	bx, w_D2DA2
 	lea	cx, w_D08E6
-	jmp	sub_0546
+	jmp	start_voice
 L_0C86:
 	mov	byte ptr b_D1814, 0
 	lea	bx, fx_1_data
@@ -2730,31 +2736,35 @@ L_0C86:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0CA2
+; end_shots
+; Gunfire: let the shot voice end (its loop goes to the silent effect fx_1_data).
 ; ----------------------------------------------------------------------------
-sub_0CA2:
+end_shots:
 	lea	bx, fx_1_data
 	mov	word ptr w_D2DB8, bx
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0CAB
+; end_barrage
+; Gunfire: let the two rhythm voices end, then set the default shot sound.
 ; ----------------------------------------------------------------------------
-sub_0CAB:
+end_barrage:
 	lea	bx, fx_1_data
 	mov	word ptr w_D2DDA, bx
 	mov	word ptr w_D2DFC, bx
 
 ; ----------------------------------------------------------------------------
-; sub_0CB7
+; default_shot_sound
+; Gunfire: set the default shot sound (falls into set_shot_sound).
 ; ----------------------------------------------------------------------------
-sub_0CB7:
+default_shot_sound:
 	mov	al, 45h
 
 ; ----------------------------------------------------------------------------
-; sub_0CB9
+; set_shot_sound
+; AL = shot sound, written into the four sound bytes of the shot tune.
 ; ----------------------------------------------------------------------------
-sub_0CB9:
+set_shot_sound:
 	mov	byte ptr b_D08E9, al
 	mov	byte ptr b_D0901, al
 	mov	byte ptr b_D0919, al
@@ -2762,9 +2772,10 @@ sub_0CB9:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0CC6
+; gunfire_tick
+; Gunfire, each tick: stop when the level or the second word is 0, else light fire (levels 1-3) or heavy fire (4 and 5).
 ; ----------------------------------------------------------------------------
-sub_0CC6:
+gunfire_tick:
 	cmp	word ptr w_D1810, 0
 	je	L_0C86
 	cmp	word ptr w_D1812, 0
@@ -2772,35 +2783,35 @@ sub_0CC6:
 	call	random2
 	cmp	word ptr w_D1810, 4
 	jb	L_0CE4
-	call	sub_0D09
+	call	heavy_gunfire
 	jmp	L_0CE7
 L_0CE4:
-	call	sub_0CEE
+	call	light_gunfire
 L_0CE7:
 	mov	ax, word ptr w_D1810
 	mov	word ptr w_D180E, ax
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0CEE
+; light_gunfire
 ; ----------------------------------------------------------------------------
-sub_0CEE:
+light_gunfire:
 	cmp	word ptr w_D180E, 4
 	jb	L_0D02
-	call	sub_0CA2
+	call	end_shots
 	cmp	word ptr w_D180E, 4
 	jb	L_0D02
-	call	sub_0CAB
+	call	end_barrage
 L_0D02:
-	call	sub_0D7D
-	call	sub_0DC6
+	call	keep_rhythm
+	call	choose_shot_gap
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0D09
+; heavy_gunfire
 ; ----------------------------------------------------------------------------
-sub_0D09:
-	call	sub_0C4A
+heavy_gunfire:
+	call	keep_shooting
 	cmp	word ptr w_D180A, 0
 	jne	L_0D1B
 	mov	bx, word ptr w_D180C
@@ -2813,51 +2824,53 @@ L_0D1B:
 	je	L_0D37
 	cmp	word ptr w_D180E, 5
 	jne	L_0D37
-	call	sub_0CAB
+	call	end_barrage
 L_0D37:
-	call	sub_0D7D
-	call	sub_0DC6
+	call	keep_rhythm
+	call	choose_shot_gap
 	ret
 L_0D3E:
 	cmp	word ptr w_D180E, 5
 	je	L_0D72
 	mov	al, 5Fh
-	call	sub_0CB9
+	call	set_shot_sound
 	lea	ax, w_D087E
 	lea	bx, w_D2DC4
 	lea	cx, w_D04BE
-	call	sub_0546
+	call	start_voice
 	xor	ax, ax
 	lea	bx, w_D2DE6
 	lea	cx, w_D04BE
-	call	sub_0546
+	call	start_voice
 	mov	ax, word ptr w_D180A
 	dec	ax
 	jns	L_0D6F
 	mov	ax, word ptr w_D180C
 L_0D6F:
-	call	sub_0DEC
+	call	set_rhythm_gap
 L_0D72:
 	cmp	byte ptr w_D2DE6, 1
 	jne	L_0DC5
-	call	sub_0D91
+	call	choose_rhythm
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0D7D
+; keep_rhythm
+; Gunfire: start the rhythm voice if it is idle.
 ; ----------------------------------------------------------------------------
-sub_0D7D:
+keep_rhythm:
 	cmp	byte ptr w_D2DE6, 0
 	jne	L_0DC5
 	xor	ax, ax
 	lea	bx, w_D2DE6
 	lea	cx, w_D04BE
-	call	sub_0546
+	call	start_voice
 
 ; ----------------------------------------------------------------------------
-; sub_0D91
+; choose_rhythm
+; Gunfire: pick the rhythm voice's next pattern at random for the level.
 ; ----------------------------------------------------------------------------
-sub_0D91:
+choose_rhythm:
 	mov	bx, word ptr w_D1810
 	dec	bx
 	shl	bx, 1
@@ -2883,9 +2896,10 @@ L_0DC5:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0DC6
+; choose_shot_gap
+; Gunfire: the gap from the random number, the level and the second word, at most FFh (falls into set_rhythm_gap).
 ; ----------------------------------------------------------------------------
-sub_0DC6:
+choose_shot_gap:
 	mov	ax, word ptr w_D1815
 	and	ax, 0FFh
 	inc	ax
@@ -2899,22 +2913,23 @@ sub_0DC6:
 	mul	dx
 	add	ax, bx
 	cmp	ax, 0FFh
-	jle	sub_0DEC
+	jle	set_rhythm_gap
 	mov	ax, 0FFh
 
 ; ----------------------------------------------------------------------------
-; sub_0DEC
+; set_rhythm_gap
+; AL = gap, written into the rhythm tune.
 ; ----------------------------------------------------------------------------
-sub_0DEC:
+set_rhythm_gap:
 	mov	byte ptr b_D04BF, al
 	ret
 	db	0B8h,3,0,0CDh,10h,0BAh,0F5h,17h,0B4h,9,0CDh,21h,0B8h,0,4Ch,0CDh
 	db	21h,0
 
 ; ----------------------------------------------------------------------------
-; sub_0E02
+; notes_off
 ; ----------------------------------------------------------------------------
-sub_0E02:
+notes_off:
 	push	bp
 	mov	bp, sp
 	subw	sp, 6
@@ -2990,9 +3005,9 @@ L_0EB6:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0EBA
+; note_on
 ; ----------------------------------------------------------------------------
-sub_0EBA:
+note_on:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -3031,9 +3046,9 @@ L_0EF8:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0F1A
+; program_change
 ; ----------------------------------------------------------------------------
-sub_0F1A:
+program_change:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -3068,9 +3083,9 @@ L_0F58:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_0F6C
+; set_volume
 ; ----------------------------------------------------------------------------
-sub_0F6C:
+set_volume:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -3109,9 +3124,9 @@ L_0FAA:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_0FCA
+; set_bend
 ; ----------------------------------------------------------------------------
-sub_0FCA:
+set_bend:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -3149,9 +3164,9 @@ L_1008:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1026
+; set_pan
 ; ----------------------------------------------------------------------------
-sub_1026:
+set_pan:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -3190,9 +3205,9 @@ L_1064:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_1084
+; voice_tick
 ; ----------------------------------------------------------------------------
-sub_1084:
+voice_tick:
 	push	bp
 	mov	bp, sp
 	subw	sp, 8
@@ -3213,7 +3228,7 @@ L_109A:
 	mov	al, byte ptr [bx+8]
 	and	ax, 0FFh
 	jne	L_10B6
-	call	sub_0E02
+	call	notes_off
 L_10B6:
 	mov	bx, word ptr [bp+4]
 	dec	byte ptr [bx]
@@ -3394,7 +3409,7 @@ L_1256:
 	mov	al, byte ptr [bx]
 	cbw
 	push	ax
-	call	sub_0F1A
+	call	program_change
 	add	sp, 2
 	jmp	L_1540
 	EVEN
@@ -3467,7 +3482,7 @@ L_1316:
 	mov	al, byte ptr [bx]
 	cbw
 	push	ax
-	call	sub_0FCA
+	call	set_bend
 	add	sp, 2
 	jmp	L_1540
 	EVEN
@@ -3483,7 +3498,7 @@ L_133C:
 	mov	al, byte ptr [bx]
 	cbw
 	push	ax
-	call	sub_0F6C
+	call	set_volume
 	add	sp, 2
 	jmp	L_1540
 	EVEN
@@ -3526,7 +3541,7 @@ L_1374:
 	mov	al, byte ptr [bx]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0EBA
+	call	note_on
 	add	sp, 4
 	inc	byte ptr [bp-4]
 L_13C7:
@@ -3592,7 +3607,7 @@ L_1446:
 	mov	al, byte ptr [bx+0Eh]
 	and	ax, 0FFh
 	push	ax
-	call	sub_1026
+	call	set_pan
 	add	sp, 2
 	mov	bx, word ptr [bp+4]
 	add	word ptr [bx+16h], 2
@@ -3613,7 +3628,7 @@ L_146E:
 	jne	L_149D
 	mov	ax, 40h
 	push	ax
-	call	sub_1026
+	call	set_pan
 	add	sp, 2
 L_149D:
 	mov	bx, word ptr [bp+4]
@@ -3723,7 +3738,7 @@ L_1559:
 	and	ax, 0FFh
 	jne	L_15A0
 L_1599:
-	call	sub_0E02
+	call	notes_off
 	jmp	L_1628
 	EVEN
 L_15A0:
@@ -3767,7 +3782,7 @@ L_15F2:
 	mov	al, byte ptr [bx+4]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0EBA
+	call	note_on
 	add	sp, 4
 L_160C:
 	mov	bx, word ptr [bp+4]
@@ -3805,7 +3820,7 @@ L_162F:
 	mov	al, byte ptr [bx+0Ch]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0F6C
+	call	set_volume
 	add	sp, 2
 L_166E:
 	mov	bx, word ptr [bp+4]
@@ -3830,7 +3845,7 @@ L_167A:
 	mov	al, byte ptr [bx+0Dh]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0FCA
+	call	set_bend
 	add	sp, 2
 L_16B0:
 	mov	bx, word ptr [bp+4]
@@ -3861,7 +3876,7 @@ L_16C4:
 	mov	al, byte ptr [bx+0Eh]
 	and	ax, 0FFh
 	push	ax
-	call	sub_1026
+	call	set_pan
 	add	sp, 2
 L_1703:
 	inc	byte ptr b_D2EB2
@@ -3873,9 +3888,9 @@ L_1703:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_170E
+; voices_tick
 ; ----------------------------------------------------------------------------
-sub_170E:
+voices_tick:
 	cmp	byte ptr b_D2DA0, 0
 	jne	L_1718
 	jmpnear	L_1772
@@ -3883,36 +3898,36 @@ L_1718:
 	mov	byte ptr b_D2EB2, 1
 	mov	ax, 2DA2h
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	ax, 2DC4h
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	ax, 2DE6h
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	ax, 2E08h
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	ax, 2E2Ah
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	ax, 2E4Ch
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	ax, 2E6Eh
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 	mov	byte ptr b_D2EB2, 9
 	mov	ax, 2E90h
 	push	ax
-	call	sub_1084
+	call	voice_tick
 	add	sp, 2
 L_1772:
 	ret

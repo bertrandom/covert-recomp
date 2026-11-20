@@ -2,12 +2,17 @@
 ;
 ; Loaded by COVERT as an overlay; exports slots 100-110 (see README "Driver
 ; interface"). play_sound(n) starts effect n (0-46) from fx_table. The music
-; and effect player (from sub_0048 to sub_0B64) is C compiler output (BP
+; and effect player (from set_volume to voices_tick) is C compiler output (BP
 ; frames, sub sp with a 16-bit immediate); the timer, OPL access and effect
 ; handlers are assembly. Registers are written through port 388h/389h with a
 ; calibrated delay and mirrored in opl_shadow. The sequencer runs from the
 ; timer interrupt (about 60 Hz, or about 300 Hz while noise effects play),
 ; chaining to the BIOS handler.
+;
+; Names of the music player's, engine's and gunfire routines follow the C# port
+; in Covert Action Enhanced
+; (github.com/Arkana-Mechanika-Studios/covert-action-enhanced), matched by
+; address; the gunfire routines take its RSOUND names in all three drivers.
 ;
 ; Rebuilds byte-identical with MASM 5.10 / LINK 5.01: tools/drivers/build.sh ASOUND
 ; (first pass by tools/drivers/disasm_masm.py with tools/drivers/ASOUND.hints)
@@ -792,9 +797,9 @@ drv_exports	label	word
 	dw	offset asnd_nop110	; slot 110
 
 ; ----------------------------------------------------------------------------
-; sub_0048
+; set_volume
 ; ----------------------------------------------------------------------------
-sub_0048:
+set_volume:
 	push	bp
 	mov	bp, sp
 	subw	sp, 4
@@ -831,9 +836,9 @@ sub_0048:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_009A
+; set_note
 ; ----------------------------------------------------------------------------
-sub_009A:
+set_note:
 	push	bp
 	mov	bp, sp
 	subw	sp, 0Ch
@@ -904,9 +909,9 @@ sub_009A:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_018E
+; bend_pitch
 ; ----------------------------------------------------------------------------
-sub_018E:
+bend_pitch:
 	push	bp
 	mov	bp, sp
 	subw	sp, 0Ah
@@ -1003,9 +1008,9 @@ L_0214:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0272
+; key_off
 ; ----------------------------------------------------------------------------
-sub_0272:
+key_off:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -1025,9 +1030,9 @@ sub_0272:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_029A
+; start_note
 ; ----------------------------------------------------------------------------
-sub_029A:
+start_note:
 	push	bp
 	mov	bp, sp
 	subw	sp, 4
@@ -1134,12 +1139,12 @@ L_0391:
 	mov	al, byte ptr [bp+4]
 	and	ax, 0FFh
 	push	ax
-	call	sub_009A
+	call	set_note
 	add	sp, 4
 	mov	al, byte ptr [bp+6]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0048
+	call	set_volume
 	add	sp, 2
 	mov	al, byte ptr b_D23FC
 	and	ax, 0FFh
@@ -1435,9 +1440,9 @@ sub_05D8:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_0602
+; write_operator
 ; ----------------------------------------------------------------------------
-sub_0602:
+write_operator:
 	call	sub_03D6
 	call	sub_0420
 	call	sub_043C
@@ -1450,9 +1455,9 @@ sub_0602:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_061C
+; set_instrument
 ; ----------------------------------------------------------------------------
-sub_061C:
+set_instrument:
 	push	bp
 	mov	bp, sp
 	subw	sp, 2
@@ -1489,7 +1494,7 @@ sub_061C:
 	mov	al, byte ptr [bx+b_D2058]
 	cbw
 	mov	word ptr w_D255E, ax
-	call	sub_0602
+	call	write_operator
 	mov	bx, word ptr w_D2562
 	mov	al, byte ptr [bx+0Eh]
 	mov	word ptr [bp-2], ax
@@ -1557,7 +1562,7 @@ sub_061C:
 	mov	al, byte ptr [bx+b_D2058]
 	cbw
 	mov	word ptr w_D255E, ax
-	call	sub_0602
+	call	write_operator
 	pop	di
 	pop	si
 	mov	sp, bp
@@ -1565,9 +1570,9 @@ sub_061C:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_073A
+; voice_tick
 ; ----------------------------------------------------------------------------
-sub_073A:
+voice_tick:
 	push	bp
 	mov	bp, sp
 	subw	sp, 6
@@ -1589,7 +1594,7 @@ L_0755:
 	mov	al, byte ptr [bx+7]
 	and	ax, 0FFh
 	jne	L_0773
-	call	sub_0272
+	call	key_off
 L_0773:
 	mov	bx, word ptr w_D2560
 	dec	byte ptr [bx]
@@ -1774,7 +1779,7 @@ L_0952:
 	mov	al, byte ptr [bx+4]
 	and	ax, 0FFh
 	push	ax
-	call	sub_061C
+	call	set_instrument
 	add	sp, 2
 	jmp	L_0A54
 	EVEN
@@ -1808,7 +1813,7 @@ L_09B2:
 	mov	al, byte ptr [bx+5]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0048
+	call	set_volume
 	add	sp, 2
 	jmpnear	L_0A54
 	EVEN
@@ -1886,7 +1891,7 @@ L_0A58:
 	and	ax, 0FFh
 	jne	L_0AA4
 L_0A9E:
-	call	sub_0272
+	call	key_off
 	jmpnear	L_0AEB
 L_0AA4:
 	mov	bx, word ptr w_D2560
@@ -1913,7 +1918,7 @@ L_0AA4:
 	mov	al, byte ptr [bx+3]
 	and	ax, 0FFh
 	push	ax
-	call	sub_029A
+	call	start_note
 	add	sp, 6
 L_0AEB:
 	mov	bx, word ptr w_D2560
@@ -1923,7 +1928,7 @@ L_0AEB:
 	mov	al, byte ptr [bx+1]
 	cbw
 	push	ax
-	call	sub_018E
+	call	bend_pitch
 	add	sp, 2
 L_0B04:
 	mov	bx, word ptr w_D2560
@@ -1952,7 +1957,7 @@ L_0B13:
 	mov	al, byte ptr [bx+5]
 	and	ax, 0FFh
 	push	ax
-	call	sub_0048
+	call	set_volume
 	add	sp, 2
 L_0B59:
 	inc	byte ptr b_D23FC
@@ -1964,28 +1969,28 @@ L_0B59:
 	EVEN
 
 ; ----------------------------------------------------------------------------
-; sub_0B64
+; voices_tick
 ; ----------------------------------------------------------------------------
-sub_0B64:
+voices_tick:
 	cmp	byte ptr b_D2320, 0
 	jne	L_0B6E
 	jmp	L_0BB2
 L_0B6E:
 	mov	byte ptr b_D23FC, 0
 	mov	word ptr w_D2560, 2322h
-	call	sub_073A
+	call	voice_tick
 	mov	word ptr w_D2560, 233Ch
-	call	sub_073A
+	call	voice_tick
 	mov	word ptr w_D2560, 2356h
-	call	sub_073A
+	call	voice_tick
 	mov	word ptr w_D2560, 2370h
-	call	sub_073A
+	call	voice_tick
 	mov	word ptr w_D2560, 238Ah
-	call	sub_073A
+	call	voice_tick
 	mov	word ptr w_D2560, 23A4h
-	call	sub_073A
+	call	voice_tick
 	mov	word ptr w_D2560, 23BEh
-	call	sub_073A
+	call	voice_tick
 L_0BB2:
 	ret
 	db	0
@@ -2162,14 +2167,14 @@ L_0CE4:
 	mov	ax, 0
 L_0CE7:
 	push	ax
-	call	sub_0CED
+	call	reset_card
 	pop	ax
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0CED
+; reset_card
 ; ----------------------------------------------------------------------------
-sub_0CED:
+reset_card:
 	xor	ax, ax
 	mov	word ptr w_D227E, ax
 	mov	word ptr w_D227C, ax
@@ -2289,9 +2294,10 @@ L_0E08:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_0E28
+; mute_level
+; AL = an operator's level register: attenuation 3Fh (silent), the KSL bits kept (pause).
 ; ----------------------------------------------------------------------------
-sub_0E28:
+mute_level:
 	mov	ah, 0
 	mov	di, ax
 	mov	bl, byte ptr [di+opl_shadow]
@@ -2299,9 +2305,10 @@ sub_0E28:
 	jmp	opl_write
 
 ; ----------------------------------------------------------------------------
-; sub_0E36
+; set_level
+; AL = an operator's level register, BH = level: writes 3Fh - BH, the KSL bits kept (resume).
 ; ----------------------------------------------------------------------------
-sub_0E36:
+set_level:
 	xor	bh, 3Fh
 	mov	ah, 0
 	mov	di, ax
@@ -2379,13 +2386,13 @@ sound_tick:
 	inc	word ptr cs:tick_count
 	cmp	byte ptr b_D2282, 0
 	je	L_0EB4
-	call	sub_1991
+	call	gunfire_tick
 L_0EB4:
 	cmp	word ptr w_D228A, 0
 	je	L_0EBE
-	call	sub_140A
+	call	engine_glide
 L_0EBE:
-	call	sub_0B64
+	call	voices_tick
 	mov	bx, word ptr cs:w_0BBE
 	mov	ss, bx
 	mov	sp, word ptr cs:w_0BC0
@@ -2876,21 +2883,21 @@ L_1246:
 	cmp	byte ptr b_D2285, 0FFh
 	jne	L_1270
 	mov	byte ptr b_D2286, 1
-	call	sub_135E
+	call	set_engine_instruments
 	mov	ax, word ptr [bp+8]
 	mov	byte ptr b_D2288, al
-	call	sub_1346
-	call	sub_13E2
+	call	load_gear_target
+	call	choose_glide
 	mov	bx, word ptr [bp+8]
 	mov	byte ptr b_D2287, bl
 	ret
 L_1270:
 	mov	byte ptr b_D2286, 2
-	call	sub_135E
+	call	set_engine_instruments
 	mov	ax, word ptr [bp+8]
 	mov	byte ptr b_D2289, al
-	call	sub_1346
-	call	sub_13E2
+	call	load_gear_target
+	call	choose_glide
 	mov	bx, word ptr [bp+8]
 	mov	byte ptr b_D2287, bl
 	ret
@@ -2903,41 +2910,41 @@ L_128C:
 	mov	byte ptr b_D2288, al
 	cmp	byte ptr b_D2287, 0
 	je	L_1246
-	call	sub_1346
-	call	sub_13E2
+	call	load_gear_target
+	call	choose_glide
 	mov	bx, word ptr [bp+8]
 	mov	byte ptr b_D2287, bl
 L_12B4:
 	ret
 L_12B5:
-	call	sub_14AB
+	call	engine_key_off
 	mov	byte ptr b_D2286, 2
 	mov	al, byte ptr b_D2289
 	mov	byte ptr b_D2287, al
 	or	al, byte ptr [bp+8]
 	je	L_1314
-	call	sub_135E
+	call	set_engine_instruments
 	mov	ax, word ptr [bp+8]
 	mov	byte ptr b_D2289, al
-	call	sub_1346
-	call	sub_13E2
+	call	load_gear_target
+	call	choose_glide
 	mov	bx, word ptr [bp+8]
 	mov	byte ptr b_D2287, bl
 	jmp	L_1479
 L_12E1:
 	cmp	byte ptr b_D2285, 0FFh
 	jne	L_1317
-	call	sub_14AB
+	call	engine_key_off
 	mov	byte ptr b_D2286, 1
 	mov	al, byte ptr b_D2288
 	mov	byte ptr b_D2287, al
 	or	al, byte ptr [bp+8]
 	je	L_1314
-	call	sub_135E
+	call	set_engine_instruments
 	mov	ax, word ptr [bp+8]
 	mov	byte ptr b_D2288, al
-	call	sub_1346
-	call	sub_13E2
+	call	load_gear_target
+	call	choose_glide
 	mov	bx, word ptr [bp+8]
 	mov	byte ptr b_D2287, bl
 	jmp	L_1479
@@ -2948,8 +2955,8 @@ L_1317:
 	mov	byte ptr b_D2289, al
 	cmp	byte ptr b_D2287, 0
 	je	L_1314
-	call	sub_1346
-	call	sub_13E2
+	call	load_gear_target
+	call	choose_glide
 	mov	bx, word ptr [bp+8]
 	mov	byte ptr b_D2287, bl
 	ret
@@ -2967,9 +2974,9 @@ sub_1332:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1346
+; load_gear_target
 ; ----------------------------------------------------------------------------
-sub_1346:
+load_gear_target:
 	mov	bx, word ptr [bp+8]
 	shl	bx, 1
 	mov	ax, word ptr [bx+w_D2295]
@@ -2986,9 +2993,9 @@ sub_1353:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_135E
+; set_engine_instruments
 ; ----------------------------------------------------------------------------
-sub_135E:
+set_engine_instruments:
 	mov	byte ptr b_D2320, 0
 	mov	byte ptr b_D23FC, 8
 	push	es
@@ -3013,13 +3020,13 @@ L_1394:
 L_139A:
 	mov	bx, 19h
 	push	bx
-	call	sub_061C
+	call	set_instrument
 	add	sp, 2
 	mov	byte ptr b_D23FC, 7
 	mov	bx, 29h
 L_13AC:
 	push	bx
-	call	sub_061C
+	call	set_instrument
 	add	sp, 2
 	mov	bx, word ptr cs:w_0BC2
 	mov	ss, bx
@@ -3041,9 +3048,9 @@ L_13DC:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_13E2
+; choose_glide
 ; ----------------------------------------------------------------------------
-sub_13E2:
+choose_glide:
 	mov	ah, byte ptr b_D228C
 	mov	al, byte ptr b_D228D
 	cmp	word ptr w_D2290, ax
@@ -3060,9 +3067,9 @@ L_1409:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_140A
+; engine_glide
 ; ----------------------------------------------------------------------------
-sub_140A:
+engine_glide:
 	mov	byte ptr b_D2320, 0
 	push	di
 	mov	di, 0B8h
@@ -3134,9 +3141,9 @@ sub_1495:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_14AB
+; engine_key_off
 ; ----------------------------------------------------------------------------
-sub_14AB:
+engine_key_off:
 	mov	byte ptr b_D2320, 0
 	push	di
 	mov	ax, 0B8h
@@ -3269,8 +3276,8 @@ fx_35:
 	mov	byte ptr b_D2292, 14h
 	mov	byte ptr b_D2287, 5
 	mov	word ptr w_D2290, 1FF0h
-	call	sub_135E
-	call	sub_13E2
+	call	set_engine_instruments
+	call	choose_glide
 	ret
 
 ; ----------------------------------------------------------------------------
@@ -3278,7 +3285,7 @@ fx_35:
 ; ----------------------------------------------------------------------------
 fx_36:
 	mov	word ptr w_D2290, 1DA0h
-	call	sub_13E2
+	call	choose_glide
 	mov	byte ptr b_D2320, 0
 	push	di
 	mov	ax, 0B7h
@@ -3307,23 +3314,23 @@ fx_37:
 	mov	byte ptr b_D2320, 0
 	push	di
 	mov	al, 43h
-	call	sub_0E28
+	call	mute_level
 	mov	al, 44h
-	call	sub_0E28
+	call	mute_level
 	mov	al, 45h
-	call	sub_0E28
+	call	mute_level
 	mov	al, 4Bh
-	call	sub_0E28
+	call	mute_level
 	mov	al, 4Ch
-	call	sub_0E28
+	call	mute_level
 	mov	al, 4Dh
-	call	sub_0E28
+	call	mute_level
 	mov	al, 53h
-	call	sub_0E28
+	call	mute_level
 	mov	al, 54h
-	call	sub_0E28
+	call	mute_level
 	mov	al, 55h
-	call	sub_0E28
+	call	mute_level
 	pop	di
 	ret
 
@@ -3335,37 +3342,37 @@ fx_38:
 	mov	al, 43h
 	lea	di, w_D2322
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 44h
 	lea	di, w_D233C
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 45h
 	lea	di, w_D2356
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 4Bh
 	lea	di, w_D2370
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 4Ch
 	lea	di, w_D238A
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 4Dh
 	lea	di, w_D23A4
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 53h
 	lea	di, w_D23BE
 	mov	bh, byte ptr [di+5]
-	call	sub_0E36
+	call	set_level
 	mov	al, 54h
 	mov	bh, 28h
-	call	sub_0E36
+	call	set_level
 	mov	al, 55h
 	mov	bh, 3Eh
-	call	sub_0E36
+	call	set_level
 	mov	ah, byte ptr b_D2293
 	mov	byte ptr b_D23F2, ah
 	mov	al, byte ptr b_D2294
@@ -3533,7 +3540,7 @@ fx_0:
 	mov	byte ptr b_D2287, 0
 	mov	byte ptr b_D2288, 0
 	mov	byte ptr b_D2289, 0
-	jmp	sub_0CED
+	jmp	reset_card
 ; Effect handlers for play_sound(n), n = 0..46
 fx_table	dw	offset fx_0
 	dw	offset fx_1
@@ -3705,9 +3712,10 @@ random:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1915
+; keep_shooting
+; Gunfire: start the shot voice if it is idle, else move it to a random place in its tune.
 ; ----------------------------------------------------------------------------
-sub_1915:
+keep_shooting:
 	cmp	word ptr w_D2322, 0
 	je	L_1936
 	cmp	word ptr w_D2322, 1
@@ -3726,7 +3734,7 @@ L_1936:
 	inc	ax
 	inc	ax
 	mov	word ptr w_D2278, ax
-	call	sub_1982
+	call	default_shot_sound
 	xor	ax, ax
 	lea	bx, w_D2322
 	lea	cx, w_D1332
@@ -3741,31 +3749,35 @@ L_1951:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_196D
+; end_shots
+; Gunfire: let the shot voice end (its loop goes to the silent effect fx_1_data).
 ; ----------------------------------------------------------------------------
-sub_196D:
+end_shots:
 	lea	bx, fx_1_data
 	mov	word ptr w_D232E, bx
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1976
+; end_barrage
+; Gunfire: let the two rhythm voices end, then set the default shot sound.
 ; ----------------------------------------------------------------------------
-sub_1976:
+end_barrage:
 	lea	bx, fx_1_data
 	mov	word ptr w_D2348, bx
 	mov	word ptr w_D2362, bx
 
 ; ----------------------------------------------------------------------------
-; sub_1982
+; default_shot_sound
+; Gunfire: set the default shot sound (falls into set_shot_sound).
 ; ----------------------------------------------------------------------------
-sub_1982:
+default_shot_sound:
 	mov	al, 21h
 
 ; ----------------------------------------------------------------------------
-; sub_1984
+; set_shot_sound
+; AL = shot sound, written into the four sound bytes of the shot tune.
 ; ----------------------------------------------------------------------------
-sub_1984:
+set_shot_sound:
 	mov	byte ptr b_D1335, al
 	mov	byte ptr b_D134D, al
 	mov	byte ptr b_D1365, al
@@ -3773,9 +3785,10 @@ sub_1984:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1991
+; gunfire_tick
+; Gunfire, each tick: stop when the level or the second word is 0, else light fire (levels 1-3) or heavy fire (4 and 5).
 ; ----------------------------------------------------------------------------
-sub_1991:
+gunfire_tick:
 	cmp	word ptr w_D227E, 0
 	je	L_1951
 	cmp	word ptr w_D2280, 0
@@ -3783,35 +3796,35 @@ sub_1991:
 	call	random
 	cmp	word ptr w_D227E, 4
 	jb	L_19AF
-	call	sub_19D4
+	call	heavy_gunfire
 	jmp	L_19B2
 L_19AF:
-	call	sub_19B9
+	call	light_gunfire
 L_19B2:
 	mov	ax, word ptr w_D227E
 	mov	word ptr w_D227C, ax
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_19B9
+; light_gunfire
 ; ----------------------------------------------------------------------------
-sub_19B9:
+light_gunfire:
 	cmp	word ptr w_D227C, 4
 	jb	L_19CD
-	call	sub_196D
+	call	end_shots
 	cmp	word ptr w_D227C, 4
 	jb	L_19CD
-	call	sub_1976
+	call	end_barrage
 L_19CD:
-	call	sub_1A48
-	call	sub_1A91
+	call	keep_rhythm
+	call	choose_shot_gap
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_19D4
+; heavy_gunfire
 ; ----------------------------------------------------------------------------
-sub_19D4:
-	call	sub_1915
+heavy_gunfire:
+	call	keep_shooting
 	cmp	word ptr w_D2278, 0
 	jne	L_19E6
 	mov	bx, word ptr w_D227A
@@ -3824,16 +3837,16 @@ L_19E6:
 	je	L_1A02
 	cmp	word ptr w_D227C, 5
 	jne	L_1A02
-	call	sub_1976
+	call	end_barrage
 L_1A02:
-	call	sub_1A48
-	call	sub_1A91
+	call	keep_rhythm
+	call	choose_shot_gap
 	ret
 L_1A09:
 	cmp	word ptr w_D227C, 5
 	je	L_1A3D
 	mov	al, 2Fh
-	call	sub_1984
+	call	set_shot_sound
 	lea	ax, w_D12C6
 	lea	bx, w_D233C
 	lea	cx, w_D0F18
@@ -3847,17 +3860,18 @@ L_1A09:
 	jns	L_1A3A
 	mov	ax, word ptr w_D227A
 L_1A3A:
-	call	sub_1AB7
+	call	set_rhythm_gap
 L_1A3D:
 	cmp	byte ptr w_D2356, 1
 	jne	L_1A90
-	call	sub_1A5C
+	call	choose_rhythm
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1A48
+; keep_rhythm
+; Gunfire: start the rhythm voice if it is idle.
 ; ----------------------------------------------------------------------------
-sub_1A48:
+keep_rhythm:
 	cmp	byte ptr w_D2356, 0
 	jne	L_1A90
 	xor	ax, ax
@@ -3866,9 +3880,10 @@ sub_1A48:
 	call	start_voice
 
 ; ----------------------------------------------------------------------------
-; sub_1A5C
+; choose_rhythm
+; Gunfire: pick the rhythm voice's next pattern at random for the level.
 ; ----------------------------------------------------------------------------
-sub_1A5C:
+choose_rhythm:
 	mov	bx, word ptr w_D227E
 	dec	bx
 	shl	bx, 1
@@ -3894,9 +3909,10 @@ L_1A90:
 	ret
 
 ; ----------------------------------------------------------------------------
-; sub_1A91
+; choose_shot_gap
+; Gunfire: the gap from the random number, the level and the second word, at most FFh (falls into set_rhythm_gap).
 ; ----------------------------------------------------------------------------
-sub_1A91:
+choose_shot_gap:
 	mov	ax, word ptr w_D2283
 	and	ax, 0FFh
 	inc	ax
@@ -3910,13 +3926,14 @@ sub_1A91:
 	mul	dx
 	add	ax, bx
 	cmp	ax, 0FFh
-	jle	sub_1AB7
+	jle	set_rhythm_gap
 	mov	ax, 0FFh
 
 ; ----------------------------------------------------------------------------
-; sub_1AB7
+; set_rhythm_gap
+; AL = gap, written into the rhythm tune.
 ; ----------------------------------------------------------------------------
-sub_1AB7:
+set_rhythm_gap:
 	mov	byte ptr b_D0F19, al
 	ret
 CODE	ENDS
